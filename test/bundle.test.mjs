@@ -195,7 +195,12 @@ test('inject expression mounts and REMOVE_EXPRESSION cleanly tears down on simul
   html.appendChild(head);
   html.appendChild(body);
 
-  // Build simulated Antigravity Home DOM
+  // Build simulated Antigravity top-right pane toolbar + Home DOM
+  const paneToolbar = makeNode('div', { attrs: { 'data-testid': 'pane-titlebar-toolbar' } });
+  const existingToolbarBtn = makeNode('button', { text: 'Split' });
+  paneToolbar.appendChild(existingToolbarBtn);
+  body.appendChild(paneToolbar);
+
   const home = makeNode('div', { className: 'agy-home' });
   const scrollWrap = makeNode('div');
   const scrollCol = makeNode('div');
@@ -566,6 +571,89 @@ test('inject expression mounts and REMOVE_EXPRESSION cleanly tears down on simul
     doc.hidden = false;
     assert.equal(effortSpan.hasAttribute('data-ag-cs-effort'), false);
 
+    // Custom Aurora Themes + Top-Bar Theme Capsule (#ag-cs-theme-selector) + 9 Settings Palettes
+    const getPaletteBtns = () =>
+      appearancePanel
+        .querySelectorAll('#ag-cs-settings-sec button')
+        .filter((b) => b.getAttribute('data-ag-cs-key') === 'palette');
+    assert.deepEqual(
+      getPaletteBtns().map((b) => [b.getAttribute('data-ag-cs-val'), b.querySelector('.ag-cs-palette-label')?.textContent]),
+      [
+        ['"obsidian"', '深邃蓝黑'],
+        ['"claude"', 'Claude'],
+        ['"gemini"', '暗夜极光'],
+        ['"sky"', '深海晴空'],
+        ['"cyan"', '幽谷碧波'],
+        ['"orange"', '熔岩暮色'],
+        ['"red"', '丝绒酒红'],
+        ['"purple"', '幻夜幽紫'],
+        ['"host"', '跟随宿主'],
+      ]
+    );
+    assert.ok(getPaletteBtns().every((b) => b.querySelector('.ag-cs-palette-swatch')?.innerHTML.startsWith('<svg')));
+
+    const themeSel = paneToolbar.querySelector('#ag-cs-theme-selector');
+    assert.ok(themeSel, 'Top-bar theme capsule should mount inside pane-titlebar-toolbar');
+    assert.equal(paneToolbar.firstChild, themeSel);
+    const themeBtn = themeSel.querySelector('#ag-cs-theme-btn');
+    const themeLabel = themeSel.querySelector('#ag-cs-theme-label');
+    assert.ok(themeBtn);
+    assert.equal(themeLabel?.textContent, '深邃蓝黑');
+    assert.equal(sandbox.window.__agClaudeStyle.getState().hasThemeCapsule, true);
+
+    // Open dropdown from top-bar capsule and select Aurora "gemini"
+    bindingCalls.length = 0;
+    themeBtn.dispatch('click');
+    const themeDd = body.querySelector('#ag-cs-theme-dropdown');
+    assert.ok(themeDd, 'Clicking #ag-cs-theme-btn should open #ag-cs-theme-dropdown');
+    assert.equal(themeBtn.getAttribute('aria-expanded'), 'true');
+    assert.equal(themeDd.querySelectorAll('.ag-cs-theme-item').length, 9);
+    assert.equal(themeDd.querySelectorAll('.ag-cs-theme-divider').length, 2);
+    const geminiItem = themeDd.querySelector('[data-ag-cs-palette-item="gemini"]');
+    assert.ok(geminiItem);
+    assert.equal(geminiItem.querySelector('.ag-cs-theme-item-text')?.textContent, '暗夜极光');
+    geminiItem.dispatch('click');
+
+    assert.equal(body.querySelector('#ag-cs-theme-dropdown'), null);
+    assert.equal(themeBtn.getAttribute('aria-expanded'), 'false');
+    assert.equal(html.getAttribute('data-ag-cs-palette'), 'gemini');
+    assert.equal(html.getAttribute('data-ag-custom-theme'), 'true');
+    assert.equal(html.style.getPropertyValue('--antigravity-active-theme-id'), 'gemini');
+    assert.equal(themeLabel?.textContent, '暗夜极光');
+    assert.deepEqual(bindingCalls.map((c) => [c.key, c.value]), [['palette', 'gemini']]);
+    const auroraStyleDark = head.querySelector('#ag-cs-aurora-theme-css');
+    assert.ok(auroraStyleDark);
+    assert.equal(auroraStyleDark.getAttribute('data-theme-key'), 'gemini:dark');
+    assert.ok(auroraStyleDark.textContent.includes('--ag-mesh:'));
+    const geminiSettingsBtn = getPaletteBtns().find((b) => b.getAttribute('data-ag-cs-val') === '"gemini"');
+    assert.equal(geminiSettingsBtn?.getAttribute('aria-pressed'), 'true');
+
+    // Flipping host theme to Light dynamically switches Aurora CSS + capsule & Settings labels to Light names
+    body.className = 'theme-light';
+    doc.hidden = true;
+    sandbox.window.__agClaudeStyle.refreshConfig({ ...cdp.DEFAULT_CONFIG, palette: 'gemini' });
+    await new Promise((r) => setTimeout(r, 80));
+    doc.hidden = false;
+    assert.equal(head.querySelector('#ag-cs-aurora-theme-css')?.getAttribute('data-theme-key'), 'gemini:light');
+    assert.equal(themeSel.querySelector('#ag-cs-theme-label')?.textContent, '四色极光');
+    assert.equal(
+      getPaletteBtns().find((b) => b.getAttribute('data-ag-cs-val') === '"gemini"')?.querySelector('.ag-cs-palette-label')?.textContent,
+      '四色极光'
+    );
+
+    // Switching back to non-Aurora palette cleans up Aurora style & root attributes
+    body.className = 'theme-dark';
+    getPaletteBtns().find((b) => b.getAttribute('data-ag-cs-val') === '"obsidian"')?.dispatch('click');
+    assert.equal(html.getAttribute('data-ag-cs-palette'), 'obsidian');
+    assert.equal(html.hasAttribute('data-ag-custom-theme'), false);
+    assert.equal(head.querySelector('#ag-cs-aurora-theme-css'), null);
+
+    // Activate Aurora "purple" and open dropdown right before teardown to prove REMOVE_EXPRESSION removes everything
+    getPaletteBtns().find((b) => b.getAttribute('data-ag-cs-val') === '"purple"')?.dispatch('click');
+    themeBtn.dispatch('click');
+    assert.ok(head.querySelector('#ag-cs-aurora-theme-css'));
+    assert.ok(body.querySelector('#ag-cs-theme-dropdown'));
+
     // Teardown must cleanly remove everything and restore host greeting text!
     const rem = vm.runInNewContext(cdp.REMOVE_EXPRESSION, sandbox);
     assert.ok(rem.removed >= 1);
@@ -574,6 +662,13 @@ test('inject expression mounts and REMOVE_EXPRESSION cleanly tears down on simul
     assert.equal(html.hasAttribute('data-ag-cs-perf-backdrop'), false);
     assert.equal(html.hasAttribute('data-ag-cs-lang'), false);
     assert.equal(html.hasAttribute('data-ag-cs-cjk'), false);
+    assert.equal(html.hasAttribute('data-ag-custom-theme'), false);
+    assert.equal(html.hasAttribute('data-aux-pane-maximized'), false);
+    assert.equal(html.style.getPropertyValue('--antigravity-active-theme-id'), '');
+    assert.equal(head.querySelector('#ag-cs-aurora-theme-css'), null);
+    assert.equal(paneToolbar.querySelector('#ag-cs-theme-selector'), null);
+    assert.equal(body.querySelector('#ag-cs-theme-dropdown'), null);
+    assert.equal(sandbox.globalThis.__agCsCustomThemes, undefined);
     assert.equal(sandbox.globalThis.__agCsEffortCore, undefined);
     assert.equal(sandbox.globalThis.__agCsPerfAssets, undefined);
     assert.equal(sandbox.globalThis.__agCsCleanups, undefined);

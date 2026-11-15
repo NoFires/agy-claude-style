@@ -356,16 +356,16 @@ test(
     assert.equal(onceResult.ok, true);
     assert.deepEqual(onceResult.pages, ['Antigravity']);
 
-    // 3. Test Runtime.bindingCalled -> config.json update & hot-reload
+    // 3. Test Runtime.bindingCalled -> config.json update & hot-reload (including Aurora palette)
     const beforeCallCount = mockCdp.getCalls().length;
     mockCdp.emitBindingCalled(cdp.SETTING_BINDING, { key: 'palette', value: 'hacker-invalid' });
-    mockCdp.emitBindingCalled(cdp.SETTING_BINDING, { key: 'palette', value: 'obsidian' });
+    mockCdp.emitBindingCalled(cdp.SETTING_BINDING, { key: 'palette', value: 'gemini' });
 
     const updatedCfg = await waitFor(() => {
       const parsed = JSON.parse(fs.readFileSync(path.join(installDir, 'config.json'), 'utf8'));
-      return parsed.palette === 'obsidian' ? parsed : null;
+      return parsed.palette === 'gemini' ? parsed : null;
     });
-    assert.equal(updatedCfg.palette, 'obsidian');
+    assert.equal(updatedCfg.palette, 'gemini');
 
     // Confirm hot-reload fired on watcher
     await waitFor(() => {
@@ -393,7 +393,7 @@ test(
     assert.equal(upgradeResult.ok, true);
     assert.equal(upgradeResult.preservedExistingConfig, true);
     const cfgAfterUpgrade = JSON.parse(fs.readFileSync(path.join(installDir, 'config.json'), 'utf8'));
-    assert.equal(cfgAfterUpgrade.palette, 'obsidian');
+    assert.equal(cfgAfterUpgrade.palette, 'gemini');
 
     // 5. Test --uninstall from installed copy inside installDir (exercises self-delete & CDP cleanup)
     const installedSelf = path.join(installDir, 'agy-claude-style-installer.exe');

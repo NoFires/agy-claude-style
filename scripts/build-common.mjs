@@ -14,7 +14,7 @@ const cdp = require(path.join(ROOT_DIR, 'cdp.js'));
 
 const VALIDATORS = {
   language: ['zh-CN', 'zh-TW', 'yue', 'en', 'ja'],
-  palette: ['obsidian', 'claude', 'host'],
+  palette: ['obsidian', 'claude', 'gemini', 'sky', 'cyan', 'orange', 'red', 'purple', 'host'],
   homeLayout: ['studio', 'classic', 'off'],
   homeRipple: 'boolean',
   composerRestyle: 'boolean',

@@ -74,7 +74,7 @@ jobs:
           echo "Resolved release tag=$TAG version=$VERSION prerelease=$PRERELEASE draft=$DRAFT"
 
   test-linux:
-    name: Test (Linux)
+    name: Build Linux Archive & Test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -87,6 +87,19 @@ jobs:
 
       - name: Run test suite
         run: npm test
+
+      - name: Build Linux release archive
+        run: |
+          mkdir -p dist
+          node scripts/build-linux.mjs --out dist/AGY-Claude-Style-linux.tar.gz
+          ls -lh dist/AGY-Claude-Style-linux.tar.gz
+
+      - name: Upload Linux release artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-linux
+          path: dist/AGY-Claude-Style-linux.tar.gz
+          retention-days: 7
 
   build-windows:
     name: Build Windows installer.exe
@@ -176,19 +189,20 @@ jobs:
         run: |
           cd release-assets
           ls -lh
-          sha256sum installer.exe AGY-Claude-Style-macOS-universal.dmg > SHA256SUMS.txt
+          sha256sum installer.exe AGY-Claude-Style-macOS-universal.dmg AGY-Claude-Style-linux.tar.gz > SHA256SUMS.txt
           cat SHA256SUMS.txt
 
       - name: Prepare Release notes
         run: |
           cat > release-notes.md <<'EOF'
-          ## 📦 开箱即用安装包 / Standalone Downloads
+          ## 📦 三端开箱即用安装包 / Standalone Downloads (Windows · macOS · Linux)
 
-          无需安装 Node.js 或任何运行时依赖，下载后直接运行即可自动配置后台守护与无损注入：
+          内置 **9 套深浅自适应配色**（`obsidian` 深邃蓝黑、`claude`、6 套极光毛玻璃主题 `gemini` / `sky` / `cyan` / `orange` / `red` / `purple` 及 `host` 官方原版）+ 顶部一键主题切换胶囊 + Clawd 像素螃蟹 + 5 语言本地化 + Token HUD：
 
-          - **Windows (x64 / Windows 10 & 11)**: 下载 `installer.exe`，双击运行自动安装、开启开机自启并实时注入 Antigravity Desktop。
-          - **macOS (Apple Silicon + Intel Universal)**: 下载 `AGY-Claude-Style-macOS-universal.dmg`，打开后拖入「应用程序」或直接双击运行 `AGY Claude Style.app`（内置 LaunchAgent 登录自启与独立原生守护进程）。
+          - **Windows (x64 / Windows 10 & 11)**: 下载 `installer.exe`（无需 Node.js），双击运行自动安装、开启开机自启并实时注入 Antigravity Desktop。
+          - **macOS (Apple Silicon + Intel Universal)**: 下载 `AGY-Claude-Style-macOS-universal.dmg`（无需 Node.js），打开后拖入「应用程序」或直接双击运行 `AGY Claude Style.app`（内置 LaunchAgent 登录自启与独立原生守护进程）。
             > **macOS 首次打开提示说明**：本构建采用 Ad-hoc 签名；若 macOS 提示“无法验证开发者”，请**右键点击 App → 打开**，或在终端执行 `xattr -cr "/Applications/AGY Claude Style.app"` 后再次打开。
+          - **Linux (Ubuntu / Debian / Arch / Fedora)**: 下载 `AGY-Claude-Style-linux.tar.gz`（需 Node.js >= 22），解压后运行 `./install-linux.sh` 自动部署并启用 `systemd --user` 登录自启守护服务。
 
           ### 🔐 SHA256 Checksums
           ```text

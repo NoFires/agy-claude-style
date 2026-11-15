@@ -38,7 +38,16 @@ function shortTitle(page) {
 function updateConfigSetting(key, value) {
   const validators = {
     language: (v) => v === 'zh-CN' || v === 'zh-TW' || v === 'yue' || v === 'en' || v === 'ja',
-    palette: (v) => v === 'obsidian' || v === 'claude' || v === 'host',
+    palette: (v) =>
+      v === 'obsidian' ||
+      v === 'claude' ||
+      v === 'gemini' ||
+      v === 'sky' ||
+      v === 'cyan' ||
+      v === 'orange' ||
+      v === 'red' ||
+      v === 'purple' ||
+      v === 'host',
     homeLayout: (v) => v === 'studio' || v === 'classic' || v === 'off',
     homeRipple: (v) => typeof v === 'boolean',
     composerRestyle: (v) => typeof v === 'boolean',

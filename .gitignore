@@ -9,9 +9,10 @@ config.json
 installer.exe
 *.exe
 
-# Compiled macOS bundles & disk images (rebuild with `npm run build:macos`)
+# Compiled macOS bundles, Linux archives & disk images
 *.app/
 *.dmg
+*.tar.gz
 dist/
 
 # Dependencies & OS metadata

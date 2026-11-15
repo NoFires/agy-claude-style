@@ -22,7 +22,7 @@
 </div>
 
 > [!NOTE]
-> **来源声明**：本项目灵感及部分源码来源于 [Nwflower/dsh-claude-style](https://github.com/Nwflower/dsh-claude-style)；Codex 思考强度滑杆样式来源于 [Microqian2th/dsh-codex-effort-slider](https://github.com/Microqian2th/dsh-codex-effort-slider)；梁武峰思考强度滑杆样式来源于 [mobius/dsh-performance-slider](https://github.com/mobius/dsh-performance-slider)。详见 [来源声明](#来源声明)。
+> **来源声明**：本项目基于 [0DNANCY/agy-claude-style](https://github.com/0DNANCY/agy-claude-style) 扩展构建；灵感及部分源码来源于 [Nwflower/dsh-claude-style](https://github.com/Nwflower/dsh-claude-style)；6 套双模式极光毛玻璃主题来源于 [MCRYII/antigravity-custom-themes](https://github.com/MCRYII/antigravity-custom-themes)；Codex 思考强度滑杆样式来源于 [Microqian2th/dsh-codex-effort-slider](https://github.com/Microqian2th/dsh-codex-effort-slider)；梁武峰思考强度滑杆样式来源于 [mobius/dsh-performance-slider](https://github.com/mobius/dsh-performance-slider)。详见 [来源声明](#来源声明)。
 
 ---
 
@@ -47,8 +47,8 @@
 <a id="核心特性"></a>
 ## ✨ 核心特性
 
-### 🌌 1. Studio 首页与会呼吸的字符波纹海
-- **保留原生特征与主题配色**：首页顶部保留 Antigravity 原生拱形 Logo（支持 `accent` / `foreground` 配色切换），与问候语水平对齐；提供 `obsidian`（黑曜石蓝暗色）、`claude` 与 `host`（跟随宿主）三套调色板，自动适配深色与浅色主题 🎨。
+### 🌌 1. Studio 首页、9 套双模式极光配色与会呼吸的字符波纹海
+- **9 套深浅自适应配色 + 顶部胶囊切换器**：除 `obsidian`（深邃蓝黑）、`claude` 与 `host`（跟随宿主）外，内置 **6 套双模式极光玻璃拟态主题**（`gemini` 四色极光/暗夜极光、`sky` 蔚蓝晴空/深海晴空、`cyan` 碧水青波/幽谷碧波、`orange` 落霞暖橙/熔岩暮色、`red` 丹霞绯红/丝绒酒红、`purple` 紫罗幽兰/幻夜幽紫），可通过窗口右上角一键主题胶囊（`#ag-cs-theme-selector`）或 `设置 → 外观` 随时切换 🎨。
 - **实时字符矩阵波纹场 (`homeRipple`)**：在首页铺设等宽字母数字二维波动网格，带云雾漂移氛围效果；轻点空白处就像把小石子丢进字符星空，触发柔和的阻尼水波纹扩散动画 `~(˘▾˘~)`。
 - **编程用量仪表盘 (`概览` / `模型` · `全部` / `30 天` / `7 天`)**：自动聚合本地对话轨迹并剔除子代理重复会话计数，展示 6 项核心指标（会话数、消息数、Token 总量、活跃天数、高峰时段、最常用模型）、`26×7` 周日历热力图、30d/7d 模型堆叠柱状图，以及**60+ 本经典著作 Token 折算标尺**——悄悄告诉你今天写的代码相当于读了几本《爱丽丝漫游奇境》或《哈利·波特》📖✨。
 
@@ -132,14 +132,15 @@ Clawd 是由 [crab-assets.js](crab-assets.js) 与 [mascot-core.js](mascot-core.j
 ## 🚀 快速开始
 
 > [!TIP]
-> **开箱即用**：不想自己编译？可直接前往仓库 [Releases](https://github.com/0DNANCY/agy-claude-style/releases) 下载 GitHub Actions 自动编译发布的 `installer.exe`（Windows）或 `AGY-Claude-Style-macOS-universal.dmg`（macOS Universal，支持 Apple Silicon 与 Intel），目标机器无需安装 Node.js！
+> **三端开箱即用**：可直接前往仓库 [Releases](../../releases) 下载 GitHub Actions 自动编译发布的三端安装包：
+> - **Windows**：`installer.exe`（目标机器无需安装 Node.js）
+> - **macOS (Apple Silicon + Intel Universal)**：`AGY-Claude-Style-macOS-universal.dmg`（目标机器无需安装 Node.js）
+> - **Linux**：`AGY-Claude-Style-linux.tar.gz`（解压运行 `./install-linux.sh` 自动部署 `systemd --user` 自启守护）
 
 ### 🪟 方式一：Windows 独立安装器（目标机器无需 Node.js）
 
-1. 直接从 [Releases](https://github.com/0DNANCY/agy-claude-style/releases) 下载 `installer.exe`，或在已安装 Node.js >= 22 的 Windows 环境克隆仓库从源码构建：
+1. 直接从 [Releases](../../releases) 下载 `installer.exe`，或在已安装 Node.js >= 22 的 Windows 环境克隆仓库从源码构建：
    ```bash
-   git clone https://github.com/0DNANCY/agy-claude-style.git
-   cd agy-claude-style
    npm run build:installer
    ```
    构建完成后会在项目根目录生成带有像素螃蟹图标的单文件 `installer.exe` 🦀。
@@ -163,10 +164,8 @@ Clawd 是由 [crab-assets.js](crab-assets.js) 与 [mascot-core.js](mascot-core.j
 <a id="方式二macos-独立应用目标机器无需-nodejs"></a>
 ### 🍎 方式二：macOS 独立应用（目标机器无需 Node.js）
 
-1. 直接从 [Releases](https://github.com/0DNANCY/agy-claude-style/releases) 下载 `AGY-Claude-Style-macOS-universal.dmg`，或在已安装 Node.js >= 22 与 Xcode Command Line Tools 的 macOS 环境从源码构建：
+1. 直接从 [Releases](../../releases) 下载 `AGY-Claude-Style-macOS-universal.dmg`，或在已安装 Node.js >= 22 与 Xcode Command Line Tools 的 macOS 环境从源码构建：
    ```bash
-   git clone https://github.com/0DNANCY/agy-claude-style.git
-   cd agy-claude-style
    npm run build:macos
    ```
    构建完成后会在项目根目录生成通用架构（`arm64` + `x86_64`）的 `AGY Claude Style.app` 与 `AGY-Claude-Style-macOS-universal.dmg` 🦀。
@@ -197,7 +196,15 @@ Clawd 是由 [crab-assets.js](crab-assets.js) 与 [mascot-core.js](mascot-core.j
      - `remove.bat`（或 `npm run remove`）：停止后台守护进程并无损清除所有注入节点与属性，恢复原生界面。
      - `autostart-on.bat` / `autostart-off.bat`：为当前脚本目录开启或取消 Windows 开机自启。
 
-   - **macOS / Linux**：
+   - **Linux 一键安装自启服务（推荐）**：
+     ```bash
+     chmod +x install-linux.sh
+     ./install-linux.sh              # 部署至 ~/.local/share/agy-claude-style 并启用 systemd --user 自启服务
+     ./install-linux.sh --status     # 查看服务与注入状态
+     ./install-linux.sh --uninstall  # 停止服务并无损还原原生界面
+     ```
+
+   - **macOS / Linux 脚本直跑**：
      ```bash
      chmod +x *.sh
      ./watch.sh     # 启动后台守护（等价于 nohup node inject.js --watch）
@@ -218,7 +225,7 @@ Clawd 是由 [crab-assets.js](crab-assets.js) 与 [mascot-core.js](mascot-core.j
 | 配置键 | 可选值 / 类型 | 默认值 | 说明 |
 | --- | --- | --- | --- |
 | `language` | `'zh-CN'` \| `'zh-TW'` \| `'yue'` \| `'en'` \| `'ja'` | `'zh-CN'` | 🌐 全局界面与插件面板语言（简中/繁中/粤语/英文/日语） |
-| `palette` | `'obsidian'` \| `'claude'` \| `'host'` | `'obsidian'` | 🎨 配色方案（黑曜石蓝暗色 / Claude / 跟随宿主） |
+| `palette` | `'obsidian'` \| `'claude'` \| `'gemini'` \| `'sky'` \| `'cyan'` \| `'orange'` \| `'red'` \| `'purple'` \| `'host'` | `'obsidian'` | 🎨 配色方案（深邃蓝黑 / Claude / 6 套双模式极光玻璃拟态主题 / 跟随宿主） |
 | `homeLayout` | `'studio'` \| `'classic'` \| `'off'` | `'studio'` | 🏠 新会话首页布局模式 |
 | `homeRipple` | `boolean` | `true` | 🌊 首页交互式字符矩阵波纹背景 |
 | `logoInk` | `'accent'` \| `'foreground'` | `'accent'` | ✒️ 首页 Antigravity Logo 线条色调 |
@@ -326,7 +333,9 @@ npm run remove
 
 本项目在设计与实现过程中参考并使用了以下开源项目的灵感、样式及部分源码，特此声明并致谢 🌸：
 
+- **上游基础项目**：[https://github.com/0DNANCY/agy-claude-style](https://github.com/0DNANCY/agy-claude-style)
 - **项目灵感来源及部分源码来源**：[https://github.com/Nwflower/dsh-claude-style](https://github.com/Nwflower/dsh-claude-style)
+- **6 套双模式极光毛玻璃主题来源**：[https://github.com/MCRYII/antigravity-custom-themes](https://github.com/MCRYII/antigravity-custom-themes)
 - **Codex 思考强度滑杆样式**：[https://github.com/Microqian2th/dsh-codex-effort-slider](https://github.com/Microqian2th/dsh-codex-effort-slider)
 - **梁武峰思考强度滑杆样式**：[https://github.com/mobius/dsh-performance-slider](https://github.com/mobius/dsh-performance-slider)
 

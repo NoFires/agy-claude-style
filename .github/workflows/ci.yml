@@ -18,7 +18,7 @@ permissions:
 
 jobs:
   test-linux:
-    name: Test (Linux)
+    name: Test & Build Archive (Linux)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -31,6 +31,19 @@ jobs:
 
       - name: Run test suite
         run: npm test
+
+      - name: Build Linux release archive
+        run: |
+          mkdir -p dist
+          node scripts/build-linux.mjs --out dist/AGY-Claude-Style-linux.tar.gz
+          ls -lh dist/AGY-Claude-Style-linux.tar.gz
+
+      - name: Upload Linux archive artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-archive
+          path: dist/AGY-Claude-Style-linux.tar.gz
+          retention-days: 7
 
   build-windows:
     name: Test & Build installer.exe (Windows)

@@ -5,7 +5,7 @@ const os = require('os');
 const path = require('path');
 
 const STYLE_ID = 'ag-claude-style-css';
-const PLUGIN_VERSION = '1.0.0';
+const PLUGIN_VERSION = '1.1.0';
 const SETTING_BINDING = '__agClaudeStyleSetting';
 const IS_MAC = process.platform === 'darwin';
 const IS_WIN = process.platform === 'win32';
@@ -181,7 +181,7 @@ function readCss() {
   return fs.readFileSync(path.join(__dirname, 'style.css'), 'utf8');
 }
 
-const RUNTIME_PARTS = ['i18n-locales.js', 'i18n-core.js', 'usage-core.js', 'ripple-core.js', 'mascot-core.js', 'crab-assets.js', 'effort-core.js', 'perf-assets.js', 'ui-runtime.js'];
+const RUNTIME_PARTS = ['i18n-locales.js', 'i18n-core.js', 'usage-core.js', 'ripple-core.js', 'mascot-core.js', 'crab-assets.js', 'effort-core.js', 'perf-assets.js', 'custom-themes.js', 'ui-runtime.js'];
 
 function readRuntimeBundle() {
   return RUNTIME_PARTS.map((f) => fs.readFileSync(path.join(__dirname, f), 'utf8')).join('\n');
@@ -287,6 +287,7 @@ const REMOVE_EXPRESSION = `(() => {
   delete globalThis.__agCsUsageCore;
   delete globalThis.__agCsEffortCore;
   delete globalThis.__agCsPerfAssets;
+  delete globalThis.__agCsCustomThemes;
   delete globalThis.__agCsI18nCore;
   delete globalThis.__agCsLocales;
   const root = document.documentElement;
@@ -295,10 +296,15 @@ const REMOVE_EXPRESSION = `(() => {
     root.removeAttribute('data-ag-cs-perf-backdrop');
     root.removeAttribute('data-ag-cs-lang');
     root.removeAttribute('data-ag-cs-cjk');
+    root.removeAttribute('data-ag-custom-theme');
+    root.removeAttribute('data-aux-pane-maximized');
+    if (root.style && typeof root.style.removeProperty === 'function') {
+      root.style.removeProperty('--antigravity-active-theme-id');
+    }
     if (root.getAttribute('data-ag-cjk') === '1') root.removeAttribute('data-ag-cjk');
   }
   const nodes = document.querySelectorAll(
-    'style#${STYLE_ID}, style#ag-token-hud-style, .ag-cs-home-panel-seat, .ag-cs-ripple-host, .ag-cs-ripple-canvas, .ag-cs-crab, .ag-cs-inline-stats, .ag-cs-context-ring, .ag-cs-ctx-popover, .ag-cs-effort-popover, .ag-cs-perf-backdrop, .ag-cs-smooth-caret, .ag-cs-turn-bar, .ag-cs-hud-top-bar, .ag-cs-hud-bottom-bar, .ag-cs-hud-rim-progress, .ag-cs-hud-footer-chip, #ag-cs-settings-sec, .ag-th-top-bar, .ag-th-bottom-bar, .ag-th-rim-progress, .ag-th-footer-chip, .ag-th-popover, .ag-th-turn-bar, .ag-th-reopen-pill'
+    'style#${STYLE_ID}, style#ag-cs-aurora-theme-css, style#ag-token-hud-style, .ag-cs-home-panel-seat, .ag-cs-ripple-host, .ag-cs-ripple-canvas, .ag-cs-crab, .ag-cs-inline-stats, .ag-cs-context-ring, .ag-cs-ctx-popover, .ag-cs-effort-popover, .ag-cs-perf-backdrop, .ag-cs-smooth-caret, .ag-cs-turn-bar, .ag-cs-hud-top-bar, .ag-cs-hud-bottom-bar, .ag-cs-hud-rim-progress, .ag-cs-hud-footer-chip, #ag-cs-settings-sec, #ag-cs-theme-selector, #ag-cs-theme-dropdown, .ag-th-top-bar, .ag-th-bottom-bar, .ag-th-rim-progress, .ag-th-footer-chip, .ag-th-popover, .ag-th-turn-bar, .ag-th-reopen-pill'
   );
   nodes.forEach((n) => n.remove());
   return { removed: nodes.length };
