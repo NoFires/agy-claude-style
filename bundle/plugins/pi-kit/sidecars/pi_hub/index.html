@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PI Hub</title>
+  <script src="/preload.js"></script>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="pi-shell" data-testid="pi-hub-shell">
+    <header class="pi-header">
+      <div class="pi-header-row">
+        <div class="pi-brand">
+          <span class="pi-logo" aria-hidden="true">π</span>
+          <div class="pi-title-wrap">
+            <h1 class="pi-title">PI Hub</h1>
+            <span id="pi-project-badge" class="pi-sub" data-testid="pi-project-badge">加载中…</span>
+          </div>
+        </div>
+        <div class="pi-header-actions">
+          <button id="btn-incognito" type="button" class="pi-chip" title="切换当前对话是否隔离共享记忆" data-testid="btn-incognito">
+            🔓 共享记忆
+          </button>
+          <button id="btn-reload-ui" type="button" class="pi-chip" title="强制刷新面板">↻</button>
+          <span class="pi-live" title="Live · 实时同步宿主主题与会话状态">
+            <span class="pi-live-dot" aria-hidden="true"></span>
+          </span>
+        </div>
+      </div>
+
+      <nav class="pi-tabs" role="tablist" data-testid="pi-tabs">
+        <button type="button" role="tab" class="pi-tab active" data-tab="plan" data-testid="tab-plan">
+          看板 <span id="badge-plan" class="pi-badge hidden">0/0</span>
+        </button>
+        <button type="button" role="tab" class="pi-tab" data-tab="memory" data-testid="tab-memory">
+          记忆 <span id="badge-memory" class="pi-badge">0</span>
+        </button>
+        <button type="button" role="tab" class="pi-tab" data-tab="goal" data-testid="tab-goal">
+          目标 2.0 <span id="badge-goal" class="pi-badge hidden">0/0</span>
+        </button>
+        <button type="button" role="tab" class="pi-tab" data-tab="skills" data-testid="tab-skills">
+          能力 <span id="badge-skills" class="pi-badge">13</span>
+        </button>
+      </nav>
+    </header>
+
+    <div id="toast" class="pi-toast hidden" role="status" data-testid="pi-toast"></div>
+
+    <main class="pi-main">
+      <!-- TAB 1: PLAN BOARD -->
+      <section id="panel-plan" class="pi-panel active" data-testid="panel-plan">
+        <div id="plan-empty" class="pi-empty">
+          <p class="pi-empty-title">当前对话暂无结构化任务清单</p>
+          <p class="pi-empty-desc">在对话中输入 <code>/pi-plan</code> 或在下方快速创建第一步，AI 会先只读列清步骤供你选择「本窗口执行」或「✨ 新窗口净室执行」，并实时勾选完成项。</p>
+          <div class="pi-inline-form">
+            <input id="input-quick-step" type="text" class="pi-input" placeholder="手动快速新建第一步…" data-testid="input-quick-step" />
+            <button id="btn-quick-step" type="button" class="pi-btn primary" data-testid="btn-quick-step">添加</button>
+          </div>
+        </div>
+
+        <div id="plan-board" class="pi-stack hidden" data-testid="plan-board">
+          <div class="pi-card">
+            <div class="pi-row-between">
+              <div class="pi-min0">
+                <div id="plan-title" class="pi-card-title">任务执行计划</div>
+                <div id="plan-mode-pill" class="pi-status-line"></div>
+              </div>
+              <span id="plan-pct" class="pi-mono-stat">0%</span>
+            </div>
+            <div class="pi-progress-track">
+              <div id="plan-progress-bar" class="pi-progress-fill" style="width: 0%"></div>
+            </div>
+            <div class="pi-launch-row">
+              <button id="btn-exec-here" type="button" class="pi-btn primary" data-testid="btn-exec-here">
+                ▶ 本窗口直接执行
+              </button>
+              <button id="btn-exec-newwin" type="button" class="pi-btn outline-accent" data-testid="btn-exec-newwin">
+                ✨ 新窗口净室执行
+              </button>
+            </div>
+          </div>
+
+          <div id="plan-steps" class="pi-steps" data-testid="plan-steps"></div>
+
+          <div class="pi-inline-form">
+            <input id="input-add-step" type="text" class="pi-input" placeholder="追加新步骤…" data-testid="input-add-step" />
+            <button id="btn-add-step" type="button" class="pi-btn" data-testid="btn-add-step">+ 步骤</button>
+          </div>
+
+          <div class="pi-row-between pi-muted-actions">
+            <button id="btn-copy-plan" type="button" class="pi-btn sm ghost" data-testid="btn-copy-plan">复制 Markdown</button>
+            <button id="btn-toggle-gate" type="button" class="pi-btn sm ghost" data-testid="btn-toggle-gate">切换只读锁</button>
+            <button id="btn-clear-plan" type="button" class="pi-btn sm ghost danger" data-testid="btn-clear-plan">清空看板</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: HIERARCHICAL MEMORY & GITHUB SYNC -->
+      <section id="panel-memory" class="pi-panel" data-testid="panel-memory">
+        <div class="pi-card" data-testid="github-sync-card">
+          <div class="pi-row-between">
+            <div class="pi-min0">
+              <div id="sync-account-label" class="pi-card-title">GitHub 跨端云同步</div>
+              <div id="sync-meta-label" class="pi-status-line">未连接 GitHub 同步仓库</div>
+            </div>
+            <div class="pi-row-gap">
+              <button id="btn-sync-now" type="button" class="pi-btn sm primary hidden" data-testid="btn-sync-now">🔄 同步</button>
+              <button id="btn-device-login" type="button" class="pi-btn sm primary" data-testid="btn-device-login">GitHub 登录</button>
+              <button id="btn-sync-logout" type="button" class="pi-btn sm ghost hidden" data-testid="btn-sync-logout">退出</button>
+            </div>
+          </div>
+
+          <div id="device-flow-box" class="pi-device-box hidden" data-testid="device-flow-box">
+            <div class="pi-status-line">在浏览器打开 <a id="device-uri" href="https://github.com/login/device" target="_blank" rel="noreferrer">github.com/login/device</a> 输入 8 位设备码：</div>
+            <div id="device-code" class="pi-device-code">----</div>
+          </div>
+
+          <details id="token-login-details" class="pi-details">
+            <summary>或使用 Personal Access Token 配置</summary>
+            <div class="pi-inline-form mt-6">
+              <input id="input-gh-token" type="password" class="pi-input" placeholder="ghp_... (需 repo 权限)" />
+              <button id="btn-token-login" type="button" class="pi-btn sm">保存同步</button>
+            </div>
+          </details>
+        </div>
+
+        <!-- Scope Switcher -->
+        <div class="pi-seg mt-8" data-testid="memory-scope-seg">
+          <button type="button" class="pi-seg-btn active" data-mem-scope="global">🌐 全局 (<span id="cnt-global">0</span>)</button>
+          <button type="button" class="pi-seg-btn" data-mem-scope="project">📁 项目 (<span id="cnt-project">0</span>)</button>
+          <button type="button" class="pi-seg-btn" data-mem-scope="instructions">📜 项目指令</button>
+        </div>
+
+        <!-- Project Bucket Selector -->
+        <div id="project-picker-row" class="pi-inline-form hidden mb-8">
+          <select id="select-project-bucket" class="pi-select" title="选择要查看或编辑的项目记忆桶"></select>
+        </div>
+
+        <div id="mem-list-section" class="pi-stack">
+          <div class="pi-inline-form">
+            <input id="input-new-memory" type="text" class="pi-input" placeholder="新增记忆（偏好、技术栈约定、避坑经验）…" data-testid="input-new-memory" />
+            <button id="btn-add-memory" type="button" class="pi-btn primary" data-testid="btn-add-memory">记住</button>
+          </div>
+          <div id="memory-items" class="pi-mem-list" data-testid="memory-items"></div>
+        </div>
+
+        <div id="mem-instructions-section" class="pi-stack hidden">
+          <textarea id="textarea-instructions" class="pi-textarea" rows="6" placeholder="项目专属指令（随 pi-memory-sync 跨电脑同步，在每次项目新对话首轮自动注入）…"></textarea>
+          <div class="pi-row-end">
+            <button id="btn-save-instructions" type="button" class="pi-btn primary" data-testid="btn-save-instructions">保存项目指令</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: GOAL MODE 2.0 -->
+      <section id="panel-goal" class="pi-panel" data-testid="panel-goal">
+        <div id="goal-empty" class="pi-stack">
+          <div class="pi-card">
+            <div class="pi-card-title">启动目标模式 2.0（独立审查 + 停滞熔断）</div>
+            <p class="pi-empty-desc mt-6">主对话负责实施，只读子代理 <code>pi-goal-reviewer</code> 独立核验真 Git Diff 与单测；连续 2 轮零 Diff 变化或同错自动熔断防空转。</p>
+            <textarea id="input-goal-obj" class="pi-textarea" rows="3" placeholder="输入明确的可验证目标，例如：为 auth 模块补齐边界单测并确保全部通过…" data-testid="input-goal-obj"></textarea>
+            <div class="pi-row-between mt-6">
+              <label class="pi-status-line">
+                最大轮次：
+                <input id="input-goal-rounds" type="number" min="1" max="20" value="6" class="pi-num-input" />
+              </label>
+              <button id="btn-start-goal" type="button" class="pi-btn primary" data-testid="btn-start-goal">🎯 设定并启动</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="goal-active" class="pi-stack hidden" data-testid="goal-active">
+          <div class="pi-card">
+            <div class="pi-row-between">
+              <span id="goal-phase-badge" class="pi-pill-tag">运行中</span>
+              <span id="goal-round-stat" class="pi-mono-stat">Round 1/6</span>
+            </div>
+            <div id="goal-objective-text" class="pi-goal-text"></div>
+            <div id="goal-diff-line" class="pi-mono-box"></div>
+            <div id="goal-verdict-box" class="pi-verdict-box hidden"></div>
+            <div class="pi-row-between mt-8">
+              <button id="btn-pause-goal" type="button" class="pi-btn sm" data-testid="btn-pause-goal">暂停 / 恢复</button>
+              <button id="btn-clear-goal" type="button" class="pi-btn sm ghost danger" data-testid="btn-clear-goal">结束清除</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 4: PORTED CAPABILITIES & SKILLS STUDIO -->
+      <section id="panel-skills" class="pi-panel" data-testid="panel-skills">
+        <div class="pi-stack">
+          <div class="pi-card">
+            <div class="pi-row-between">
+              <div class="pi-card-title">实时守护闸门与子代理</div>
+              <span class="pi-pill-tag">已激活</span>
+            </div>
+            <div id="guardrails-list" class="pi-guard-grid mt-6"></div>
+          </div>
+
+          <div class="pi-card">
+            <div class="pi-row-between">
+              <div class="pi-card-title">移植技能工作台</div>
+              <span id="skills-count-label" class="pi-mono-stat">13 项</span>
+            </div>
+            <div class="pi-inline-form mt-6">
+              <input id="input-skill-filter" type="search" class="pi-input" placeholder="筛选技能 (/pi-plan, /grill, k-dense…)" />
+            </div>
+            <div id="skills-grid" class="pi-skill-list mt-8"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="/app.js"></script>
+</body>
+</html>

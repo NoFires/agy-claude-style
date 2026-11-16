@@ -1,0 +1,34 @@
+{
+  "pi-session-memory-and-handoff": {
+    "SessionStart": [
+      {
+        "type": "command",
+        "command": "node ./hooks/session-start.mjs",
+        "timeout": 10
+      }
+    ]
+  },
+  "pi-plan-and-safety-gate": {
+    "PreToolUse": [
+      {
+        "matcher": "edit_file|write_file|run_command",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ./hooks/pre-tool-use.mjs",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  },
+  "pi-goal-and-plan-referee": {
+    "Stop": [
+      {
+        "type": "command",
+        "command": "node ./hooks/stop.mjs",
+        "timeout": 15
+      }
+    ]
+  }
+}

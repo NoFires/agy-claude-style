@@ -1,0 +1,915 @@
+/*
+ * PI Hub — Native Antigravity Auxiliary Pane Theme System.
+ *
+ * Colors, surfaces, borders, accents, and fonts come directly from the host theme
+ * CSS variables synced onto :root by preload.js (--background, --foreground,
+ * --card, --card-border, --border, --primary, --primary-foreground, --muted,
+ * --muted-foreground, --placeholder, --error, --font-family, --editor-font-family).
+ * Whatever theme the user chooses in Antigravity Settings updates PI Hub live!
+ */
+:root {
+  color-scheme: light;
+  /* Surfaces */
+  --pi-bg: var(--background, #f7f7f8);
+  --pi-card: var(--card, #ffffff);
+  --pi-secondary: var(--secondary, #e6e7e9);
+  --pi-subtle: var(--muted, color-mix(in srgb, var(--pi-text) 5%, transparent));
+
+  /* Typography colors */
+  --pi-text: var(--foreground, #1d1f21);
+  --pi-text-2: var(--secondary-foreground, #3d4348);
+  --pi-muted: var(--muted-foreground, #5d676f);
+  --pi-faint: var(--placeholder, #9da5ab);
+
+  /* Lines & Borders */
+  --pi-border: var(--card-border, var(--border, rgba(0, 0, 0, 0.1)));
+  --pi-line: color-mix(in srgb, var(--pi-text) 8%, transparent);
+  --pi-hover: color-mix(in srgb, var(--pi-text) 5%, transparent);
+  --pi-press: color-mix(in srgb, var(--pi-text) 9%, transparent);
+  --pi-fill: color-mix(in srgb, var(--pi-text) 6%, transparent);
+  --pi-field: color-mix(in srgb, var(--pi-text) 4%, transparent);
+
+  /* Accents & Status */
+  --pi-accent: var(--primary, #007acc);
+  --pi-accent-contrast: var(--primary-foreground, #ffffff);
+  --pi-accent-hover: color-mix(in srgb, var(--pi-accent) 88%, var(--pi-text));
+  --pi-accent-soft: color-mix(in srgb, var(--pi-accent) 12%, transparent);
+  --pi-ring: color-mix(in srgb, var(--pi-accent) 65%, transparent);
+  --pi-ok: var(--success, #63984f);
+  --pi-ok-contrast: #ffffff;
+  --pi-warn: var(--warning, #bca136);
+  --pi-danger: var(--error, #cb3d3d);
+
+  /* Fonts & Scale (matches Antigravity toolkit & Swarm board) */
+  --pi-font: var(
+    --font-family,
+    "Google Sans Flex",
+    "Google Sans",
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "PingFang SC",
+    "Segoe UI",
+    Roboto,
+    sans-serif
+  );
+  --pi-mono: var(
+    --editor-font-family,
+    "Google Sans Code",
+    ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Monaco,
+    Consolas,
+    monospace
+  );
+
+  --r-sm: 4px;
+  --r-md: 6px;
+  --r-lg: 8px;
+  --pad-x: 16px;
+  --col: 760px;
+  --inline: max(var(--pad-x), calc((100% - var(--col)) / 2));
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --pi-ok: var(--success, #7aae66);
+  --pi-warn: var(--warning, #cab43e);
+  --pi-hover: color-mix(in srgb, var(--pi-text) 6%, transparent);
+  --pi-press: color-mix(in srgb, var(--pi-text) 11%, transparent);
+  --pi-fill: color-mix(in srgb, var(--pi-text) 8%, transparent);
+  --pi-field: color-mix(in srgb, var(--pi-text) 6%, transparent);
+}
+
+* {
+  box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--pi-text) 22%, transparent) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--pi-text) 20%, transparent);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+html {
+  background: var(--pi-bg);
+}
+
+html.in-host,
+html.in-host body {
+  background: transparent !important;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--pi-bg);
+  color: var(--pi-text);
+  font-family: var(--pi-font);
+  font-size: 13px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--pi-ring);
+  outline-offset: 1px;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--pi-accent) 28%, transparent);
+}
+
+code {
+  font-family: var(--pi-mono);
+  font-size: 0.9em;
+  padding: 1px 4px;
+  border-radius: var(--r-sm);
+  background: var(--pi-fill);
+  color: var(--code-foreground, inherit);
+}
+
+.hidden {
+  display: none !important;
+}
+
+.pi-min0 {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.pi-shell {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 100%;
+  min-height: 100vh;
+  overflow-x: hidden;
+  font-family: var(--pi-font);
+}
+
+/* Sticky Header + Underline Tabs (matches native Antigravity Aux Pane & gradient themes) */
+.pi-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: color-mix(in srgb, var(--pi-bg) 36%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--pi-line);
+  padding: 12px var(--inline) 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pi-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+.pi-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.pi-logo {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--r-md);
+  background: var(--pi-accent-soft);
+  color: var(--pi-accent);
+  border: 1px solid color-mix(in srgb, var(--pi-accent) 28%, transparent);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.pi-title-wrap {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.pi-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.pi-sub {
+  display: block;
+  font-size: 11px;
+  color: var(--pi-muted);
+  font-family: var(--pi-mono);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.pi-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.pi-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  color: var(--pi-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.pi-live-dot {
+  position: relative;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--pi-ok);
+}
+
+.pi-chip {
+  border: 1px solid var(--pi-border);
+  background: color-mix(in srgb, var(--pi-card) 60%, transparent);
+  color: var(--pi-text-2);
+  border-radius: 999px;
+  padding: 3px 9px;
+  font-size: 11.5px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+
+.pi-chip:hover {
+  background: var(--pi-hover);
+  color: var(--pi-text);
+}
+
+.pi-chip.isolated {
+  background: var(--pi-accent);
+  border-color: var(--pi-accent);
+  color: var(--pi-accent-contrast);
+  font-weight: 600;
+}
+
+.pi-tabs {
+  display: flex;
+  gap: 14px;
+  margin-top: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.pi-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.pi-tab {
+  position: relative;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--pi-muted);
+  font-size: 12.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 0.12s ease;
+}
+
+.pi-tab::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  border-radius: 2px 2px 0 0;
+  background: transparent;
+  transition: background-color 0.12s ease;
+}
+
+.pi-tab:hover {
+  color: var(--pi-text);
+}
+
+.pi-tab.active {
+  color: var(--pi-text);
+  font-weight: 600;
+}
+
+.pi-tab.active::after {
+  background: var(--pi-text);
+}
+
+.pi-badge {
+  font-family: var(--pi-mono);
+  font-size: 11px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--pi-fill);
+  color: var(--pi-muted);
+}
+
+.pi-tab.active .pi-badge {
+  background: var(--pi-accent-soft);
+  color: var(--pi-accent);
+}
+
+.pi-main {
+  padding: 14px var(--inline) 28px;
+}
+
+.pi-toast {
+  margin: 8px var(--inline) 0;
+  padding: 7px 10px;
+  border-radius: var(--r-md);
+  background: var(--pi-card);
+  border: 1px solid var(--pi-accent);
+  color: var(--pi-text);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.pi-panel {
+  display: none;
+}
+
+.pi-panel.active {
+  display: block;
+  animation: pi-fade 0.14s ease-out;
+}
+
+@keyframes pi-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+.pi-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pi-card {
+  background: color-mix(in srgb, var(--pi-card) 72%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--pi-border);
+  border-radius: var(--r-lg);
+  padding: 11px 12px;
+}
+
+.pi-card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pi-text);
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.pi-status-line {
+  font-size: 11.5px;
+  color: var(--pi-muted);
+  margin-top: 2px;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.pi-row-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.pi-row-gap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.pi-row-end {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.pi-mono-stat {
+  font-family: var(--pi-mono);
+  font-size: 11.5px;
+  font-weight: 550;
+  font-variant-numeric: tabular-nums;
+  color: var(--pi-muted);
+  flex-shrink: 0;
+}
+
+.pi-progress-track {
+  height: 5px;
+  border-radius: 999px;
+  background: var(--pi-fill);
+  overflow: hidden;
+  margin: 9px 0 10px;
+}
+
+.pi-progress-fill {
+  height: 100%;
+  background: var(--pi-accent);
+  border-radius: 999px;
+  transition: width 0.2s ease;
+}
+
+.pi-launch-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.pi-launch-row > .pi-btn {
+  flex: 1 1 130px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pi-btn {
+  border: 1px solid var(--pi-border);
+  background: color-mix(in srgb, var(--pi-card) 78%, transparent);
+  color: var(--pi-text);
+  border-radius: var(--r-md);
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+
+.pi-btn:hover {
+  background: var(--pi-hover);
+  border-color: color-mix(in srgb, var(--pi-text) 22%, transparent);
+}
+
+.pi-btn:active {
+  background: var(--pi-press);
+}
+
+.pi-btn.primary {
+  background: var(--pi-accent);
+  border-color: var(--pi-accent);
+  color: var(--pi-accent-contrast);
+  font-weight: 550;
+}
+
+.pi-btn.primary:hover {
+  background: var(--pi-accent-hover);
+  border-color: var(--pi-accent-hover);
+}
+
+.pi-btn.outline-accent {
+  background: var(--pi-accent-soft);
+  border-color: color-mix(in srgb, var(--pi-accent) 45%, transparent);
+  color: var(--pi-text);
+  font-weight: 550;
+}
+
+.pi-btn.outline-accent:hover {
+  background: color-mix(in srgb, var(--pi-accent) 18%, transparent);
+  border-color: var(--pi-accent);
+}
+
+.pi-btn.sm {
+  padding: 4px 8px;
+  font-size: 11.5px;
+}
+
+.pi-btn.ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--pi-muted);
+}
+
+.pi-btn.ghost:hover {
+  color: var(--pi-text);
+  background: var(--pi-hover);
+  border-color: transparent;
+}
+
+.pi-btn.danger:hover {
+  color: var(--pi-danger);
+  background: color-mix(in srgb, var(--pi-danger) 10%, transparent);
+}
+
+.pi-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pi-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--pi-card) 72%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--pi-border);
+}
+
+.pi-step.in_progress {
+  border-color: var(--pi-accent);
+  background: var(--pi-accent-soft);
+}
+
+.pi-step.done {
+  opacity: 0.78;
+}
+
+.pi-step-check {
+  width: 20px;
+  height: 20px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--pi-border);
+  background: var(--pi-field);
+  color: var(--pi-muted);
+  font-family: var(--pi-mono);
+  font-size: 11px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.pi-step.done .pi-step-check {
+  background: var(--pi-ok);
+  border-color: var(--pi-ok);
+  color: var(--pi-ok-contrast);
+}
+
+.pi-step.in_progress .pi-step-check {
+  background: var(--pi-accent);
+  border-color: var(--pi-accent);
+  color: var(--pi-accent-contrast);
+}
+
+.pi-step.failed .pi-step-check {
+  background: var(--pi-danger);
+  border-color: var(--pi-danger);
+  color: #ffffff;
+}
+
+.pi-step-body {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.pi-step-title {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--pi-text);
+}
+
+.pi-step.done .pi-step-title {
+  text-decoration: line-through;
+  color: var(--pi-muted);
+}
+
+.pi-step-meta {
+  font-size: 11px;
+  color: var(--pi-muted);
+  font-family: var(--pi-mono);
+  margin-top: 2px;
+}
+
+.pi-inline-form {
+  display: flex;
+  gap: 6px;
+}
+
+.pi-input,
+.pi-textarea,
+.pi-num-input,
+.pi-select {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--pi-border);
+  background: var(--pi-field);
+  color: var(--pi-text);
+  border-radius: var(--r-md);
+  padding: 6px 9px;
+  font-size: 12px;
+  font-family: inherit;
+  transition: border-color 0.12s ease, background-color 0.12s ease;
+}
+
+.pi-input::placeholder,
+.pi-textarea::placeholder {
+  color: var(--pi-faint);
+}
+
+.pi-num-input {
+  width: 56px;
+  padding: 3px 6px;
+}
+
+.pi-input:focus,
+.pi-textarea:focus,
+.pi-select:focus {
+  border-color: var(--pi-accent);
+  background: var(--pi-card);
+}
+
+.pi-empty {
+  background: color-mix(in srgb, var(--pi-card) 68%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px dashed var(--pi-border);
+  border-radius: var(--r-lg);
+  padding: 16px 14px;
+}
+
+.pi-empty-title {
+  margin: 0 0 4px;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.pi-empty-desc {
+  margin: 0 0 10px;
+  color: var(--pi-muted);
+  font-size: 12px;
+}
+
+.pi-seg {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3px;
+  background: var(--pi-fill);
+  padding: 3px;
+  border-radius: var(--r-md);
+  margin-bottom: 10px;
+}
+
+.pi-seg-btn {
+  border: none;
+  background: transparent;
+  color: var(--pi-muted);
+  font-size: 11.5px;
+  padding: 5px 4px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.pi-seg-btn:hover {
+  color: var(--pi-text);
+}
+
+.pi-seg-btn.active {
+  background: var(--pi-card);
+  color: var(--pi-text);
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.pi-mem-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pi-mem-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  background: color-mix(in srgb, var(--pi-card) 72%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--pi-border);
+  border-radius: var(--r-md);
+}
+
+.pi-mem-item.disabled {
+  opacity: 0.52;
+}
+
+.pi-mem-item input[type="checkbox"] {
+  accent-color: var(--pi-accent);
+  margin-top: 3px;
+}
+
+.pi-mem-text {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  font-size: 12px;
+}
+
+.pi-device-box {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: var(--r-md);
+  background: var(--pi-fill);
+}
+
+.pi-device-code {
+  font-family: var(--pi-mono);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--pi-accent);
+  margin-top: 4px;
+}
+
+.pi-details {
+  margin-top: 8px;
+  font-size: 11.5px;
+  color: var(--pi-muted);
+}
+
+.pi-details summary {
+  cursor: pointer;
+}
+
+.pi-pill-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 550;
+  background: var(--pi-accent-soft);
+  color: var(--pi-accent);
+}
+
+.pi-goal-text {
+  margin: 8px 0;
+  font-size: 12.5px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.pi-mono-box {
+  font-family: var(--pi-mono);
+  font-size: 11px;
+  color: var(--pi-muted);
+  padding: 6px 8px;
+  background: var(--pi-fill);
+  border-radius: var(--r-md);
+  overflow-wrap: anywhere;
+}
+
+.pi-verdict-box {
+  margin-top: 7px;
+  padding: 7px 9px;
+  border-radius: var(--r-md);
+  border-left: 3px solid var(--pi-accent);
+  background: var(--pi-fill);
+  font-size: 11.5px;
+  overflow-wrap: anywhere;
+}
+
+.pi-guard-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.pi-guard-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: var(--r-md);
+  background: var(--pi-field);
+  font-size: 11.5px;
+}
+
+.pi-guard-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--pi-ok);
+  display: inline-block;
+  margin-right: 6px;
+}
+
+.pi-skill-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pi-skill-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--pi-border);
+  background: var(--pi-field);
+  transition: border-color 0.12s ease, background-color 0.12s ease;
+}
+
+.pi-skill-card:hover {
+  border-color: color-mix(in srgb, var(--pi-text) 20%, transparent);
+  background: var(--pi-hover);
+}
+
+.pi-skill-card.core {
+  border-color: color-mix(in srgb, var(--pi-accent) 36%, transparent);
+  background: var(--pi-accent-soft);
+}
+
+.pi-skill-cmd {
+  font-family: var(--pi-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--pi-text);
+}
+
+.pi-skill-card.core .pi-skill-cmd {
+  color: var(--pi-accent);
+}
+
+.mt-6 {
+  margin-top: 6px;
+}
+
+.mt-8 {
+  margin-top: 8px;
+}
+
+.mb-8 {
+  margin-bottom: 8px;
+}
+
+a {
+  color: var(--link, var(--pi-accent));
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}

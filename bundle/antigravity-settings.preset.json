@@ -1,0 +1,40 @@
+{
+  "plugins": {
+    "coderabbit": {
+      "installedFrom": {
+        "id": "antigravity-plugins-partners/plugin/coderabbit",
+        "marketplace": "antigravity-plugins-partners",
+        "version": "1.2.1"
+      }
+    },
+    "context7": {
+      "installedFrom": {
+        "id": "antigravity-plugins-partners/plugin/context7",
+        "marketplace": "antigravity-plugins-partners",
+        "version": "1.0.1"
+      }
+    },
+    "gdrive": {
+      "installedFrom": {
+        "id": "antigravity-plugins-official/plugin/gdrive",
+        "marketplace": "antigravity-plugins-official",
+        "version": "0.0.11"
+      }
+    }
+  },
+  "userSettings": {
+    "autoExecutionPolicy": "CASCADE_COMMANDS_AUTO_EXECUTION_EAGER",
+    "enableTerminalSandbox": false,
+    "globalPermissionGrants": {
+      "allow": [
+        "mcp(pi-kit_pi-kit/pi_memory)"
+      ]
+    },
+    "nonWorkspaceFileAccessPolicy": "AGENT_SETTING_POLICY_ALLOW",
+    "permissionGrantsV2Migrated": true,
+    "permissionPreset": "AGENT_PERMISSION_PRESET_TURBO",
+    "queuedMessageDeliveryStrategy": "MESSAGE_DELIVERY_STRATEGY_NEXT_INVOCATION",
+    "themeMode": "THEME_MODE_INHERIT",
+    "verboseConversationSteps": true
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "pi-kit": {
+      "command": "sh",
+      "args": [
+        "-c",
+        "exec node \"$HOME/.gemini/config/plugins/pi-kit/mcp/server.mjs\""
+      ]
+    }
+  }
+}

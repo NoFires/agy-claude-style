@@ -1,0 +1,21 @@
+{
+  "command": "node",
+  "args": ["main.mjs"],
+  "restart_policy": "always",
+  "display_name": "PI Hub",
+  "description": "PI Hub: Host-theme-synced PlanBoard, Hierarchical Memory & GitHub Sync, Goal 2.0, and Skills panel.",
+  "has_web_ui": true,
+  "agent_permissions": {
+    "allows_user_interactions": true
+  },
+  "ui_config": {
+    "display_name": "PI Hub",
+    "views": [
+      {
+        "path": "/",
+        "entrypoint": "SIDECAR_UI_ENTRYPOINT_AUX_PANE",
+        "title": "PI Hub"
+      }
+    ]
+  }
+}

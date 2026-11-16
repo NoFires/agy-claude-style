@@ -1,0 +1,15 @@
+{
+  "name": "dev-workflow",
+  "displayName": "Dev Workflow Autopilot",
+  "version": "1.0.0",
+  "description": "Automatic toolchain routing rule linking Context7, CodeRabbit, Google Drive, Colab Operator, and PI Kit (Grill, PlanBoard, Goal 2.0, Conventional Commits) into a cohesive Small-CL engineering workflow.",
+  "logo": "assets/logo.svg",
+  "author": {
+    "name": "SeredenFei"
+  },
+  "suggestedPrompts": [
+    "先用 Context7 核对当前版本 API 后实现最小改动切片，并在提交前用 CodeRabbit 审本地 diff",
+    "先 grill 压测我的算法/架构方案，收敛后走 /pi-plan 开启净室执行",
+    "通过 Google Drive 检索整理最近的 Colab 实验产物或求职文档，并把经验记入项目记忆"
+  ]
+}

@@ -132,10 +132,10 @@ Clawd 是由 [crab-assets.js](crab-assets.js) 与 [mascot-core.js](mascot-core.j
 ## 🚀 快速开始
 
 > [!TIP]
-> **三端开箱即用**：可直接前往仓库 [Releases](../../releases) 下载 GitHub Actions 自动编译发布的三端安装包：
+> **三端开箱即用 & Linux 全量工作站一键复刻（v1.2.0+）**：可直接前往仓库 [Releases](../../releases) 下载 GitHub Actions 自动编译发布的三端安装包：
+> - **Linux 全量工作站归档**：`AGY-Claude-Style-linux.tar.gz`（解压运行 `./install-linux.sh`，一键复刻 **Gemini Studio UI + `systemd --user` 守护 + 5 大全局插件 / 13 项技能 / PI Hub 侧边栏 + Antigravity Turbo 偏好 + `uv`/`colab`/`coderabbit`(`cr`)/`gdrive` CLI 工具链**）
 > - **Windows**：`installer.exe`（目标机器无需安装 Node.js）
 > - **macOS (Apple Silicon + Intel Universal)**：`AGY-Claude-Style-macOS-universal.dmg`（目标机器无需安装 Node.js）
-> - **Linux**：`AGY-Claude-Style-linux.tar.gz`（解压运行 `./install-linux.sh` 自动部署 `systemd --user` 自启守护）
 
 ### 🪟 方式一：Windows 独立安装器（目标机器无需 Node.js）
 
@@ -196,13 +196,20 @@ Clawd 是由 [crab-assets.js](crab-assets.js) 与 [mascot-core.js](mascot-core.j
      - `remove.bat`（或 `npm run remove`）：停止后台守护进程并无损清除所有注入节点与属性，恢复原生界面。
      - `autostart-on.bat` / `autostart-off.bat`：为当前脚本目录开启或取消 Windows 开机自启。
 
-   - **Linux 一键安装自启服务（推荐）**：
+   - **Linux 一键全量工作站复刻（推荐）**：
      ```bash
+     git clone https://github.com/SeredenFei/agy-claude-style.git
+     cd agy-claude-style
      chmod +x install-linux.sh
-     ./install-linux.sh              # 部署至 ~/.local/share/agy-claude-style 并启用 systemd --user 自启服务
-     ./install-linux.sh --status     # 查看服务与注入状态
+     ./install-linux.sh              # 一键部署 UI 守护 + 5 大插件(13 技能/PI Hub/MCP/Hooks) + Turbo 偏好 + colab/cr/gdrive CLI
+     ./install-linux.sh --ui-only    # 仅安装 AGY Claude Style 界面与守护服务
+     ./install-linux.sh --status     # 查看 UI 服务、插件清单与 CLI 工具链状态
      ./install-linux.sh --uninstall  # 停止服务并无损还原原生界面
      ```
+     **Linux 首次打开后的 3 步登录（个人 Token 不入库）**：
+     1. 启动 Google Antigravity 登录账号；若需启用 Google Drive OAuth，执行一次 `~/.gemini/bin/agy plugin install gdrive@antigravity-plugins-official` 并在插件面板点击连接。
+     2. 打开右侧 **PI Hub 面板** → **记忆云同步**，填入 GitHub Token 一键从私有库 `pi-memory-sync` 拉回全部全局与项目记忆。
+     3. 按需完成命令行登录：`gh auth login`、`coderabbit auth login`、`colab auth login`。
 
    - **macOS / Linux 脚本直跑**：
      ```bash

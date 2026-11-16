@@ -1,0 +1,20 @@
+{
+  "name": "pi-kit",
+  "displayName": "PI Kit",
+  "version": "1.0.0",
+  "description": "Ports SeredenFei/pi-desktop core strengths to Antigravity: Global/Project Memory with GitHub pi-memory-sync, Adaptive PlanBoard with Clean New-Window Handoff & live check-off, Goal Mode 2.0 with Git Diff stagnation circuit breaker, Thinking/Tool discipline, ~/.pi skills, and the warm minimal PI Hub side panel.",
+  "logo": "assets/logo.svg",
+  "author": {
+    "name": "SeredenFei",
+    "url": "https://github.com/SeredenFei/pi-desktop"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SeredenFei/pi-desktop"
+  },
+  "suggestedPrompts": [
+    "/pi-plan 先只读梳理改动方案并列出任务看板，让我选择本窗口或新窗口净室执行",
+    "/pi-goal 启动目标模式 2.0，收敛验收标准后带独立审查与停滞熔断执行",
+    "/pi-memory 查看当前全局与项目记忆状态，并与 GitHub pi-memory-sync 同步"
+  ]
+}

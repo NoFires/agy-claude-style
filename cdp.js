@@ -5,7 +5,7 @@ const os = require('os');
 const path = require('path');
 
 const STYLE_ID = 'ag-claude-style-css';
-const PLUGIN_VERSION = '1.1.0';
+const PLUGIN_VERSION = '1.2.0';
 const SETTING_BINDING = '__agClaudeStyleSetting';
 const IS_MAC = process.platform === 'darwin';
 const IS_WIN = process.platform === 'win32';
