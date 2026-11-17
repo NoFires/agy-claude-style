@@ -1,6 +1,6 @@
 {
   "name": "agy-claude-style",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "AGY Claude Style & Workstation Suite — Cross-platform Studio UI theme, Clawd mascot, Token HUD, plus one-command Linux full workstation replica (PI Kit, Dev Workflow, Context7, CodeRabbit, Google Drive & CLI toolchain) for Google Antigravity.",
   "private": true,
   "scripts": {
