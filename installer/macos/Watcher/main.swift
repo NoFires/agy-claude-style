@@ -22,6 +22,11 @@ final class WatcherApp {
     private let lockFile: String
     private let isWatch: Bool
     private let logLock = NSLock()
+    private let isoFormatter: ISO8601DateFormatter = {
+        let fmt = ISO8601DateFormatter()
+        fmt.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return fmt
+    }()
 
     init(baseDir: String, isWatch: Bool) {
         self.baseDir = baseDir
@@ -33,26 +38,26 @@ final class WatcherApp {
 
     func log(_ line: String) {
         guard isWatch else { return }
-        logLock.lock()
-        defer { logLock.unlock() }
-        let fm = FileManager.default
-        if let attrs = try? fm.attributesOfItem(atPath: logFile),
-           let size = attrs[.size] as? NSNumber,
-           size.int64Value > 1024 * 1024 {
-            try? "".write(toFile: logFile, atomically: false, encoding: .utf8)
-        }
-        let fmt = ISO8601DateFormatter()
-        fmt.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        let entry = "[\(fmt.string(from: Date()))] \(line)\n"
-        guard let data = entry.data(using: .utf8) else { return }
-        if !fm.fileExists(atPath: logFile) {
-            fm.createFile(atPath: logFile, contents: data, attributes: nil)
-            return
-        }
-        if let handle = FileHandle(forWritingAtPath: logFile) {
-            defer { try? handle.close() }
-            _ = try? handle.seekToEnd()
-            try? handle.write(contentsOf: data)
+        autoreleasepool {
+            logLock.lock()
+            defer { logLock.unlock() }
+            let fm = FileManager.default
+            if let attrs = try? fm.attributesOfItem(atPath: logFile),
+               let size = attrs[.size] as? NSNumber,
+               size.int64Value > 1024 * 1024 {
+                try? "".write(toFile: logFile, atomically: false, encoding: .utf8)
+            }
+            let entry = "[\(isoFormatter.string(from: Date()))] \(line)\n"
+            guard let data = entry.data(using: .utf8) else { return }
+            if !fm.fileExists(atPath: logFile) {
+                fm.createFile(atPath: logFile, contents: data, attributes: nil)
+                return
+            }
+            if let handle = FileHandle(forWritingAtPath: logFile) {
+                defer { try? handle.close() }
+                _ = try? handle.seekToEnd()
+                try? handle.write(contentsOf: data)
+            }
         }
     }
 
@@ -83,52 +88,60 @@ final class WatcherApp {
     }
 
     func runOnce(overridePort: Int?, outFile: String?) -> Int32 {
-        do {
-            let manifest = try PluginManifest.load(baseDir: baseDir)
-            guard let port = CdpHelper.readPort(overridePort: overridePort) else {
-                Self.writeResult(outFile: outFile, ok: false, message: "未找到调试端口文件，Antigravity 可能未运行", pages: nil)
+        return autoreleasepool {
+            do {
+                let manifest = try PluginManifest.load(baseDir: baseDir)
+                guard let port = CdpHelper.readPort(overridePort: overridePort) else {
+                    Self.writeResult(outFile: outFile, ok: false, message: "未找到调试端口文件，Antigravity 可能未运行", pages: nil)
+                    return 1
+                }
+                let pages = try CdpHelper.listPages(port: port)
+                if pages.isEmpty {
+                    Self.writeResult(outFile: outFile, ok: false, message: "未找到 Antigravity 窗口页面", pages: nil)
+                    return 1
+                }
+                let expr = try CdpHelper.buildInjectExpression(baseDir: baseDir, manifest: manifest)
+                var injectedTitles: [String] = []
+                for page in pages {
+                    try autoreleasepool {
+                        let session = try CdpSession.connect(wsUrl: page.webSocketDebuggerUrl, timeoutMs: 4000)
+                        defer { session.close() }
+                        _ = try session.evaluate(expr, awaitPromise: false)
+                        injectedTitles.append(CdpHelper.shortTitle(page))
+                    }
+                }
+                Self.writeResult(outFile: outFile, ok: true, message: "injected \(injectedTitles.count) page(s)", pages: injectedTitles)
+                return 0
+            } catch {
+                Self.writeResult(outFile: outFile, ok: false, message: error.localizedDescription, pages: nil)
                 return 1
             }
-            let pages = try CdpHelper.listPages(port: port)
-            if pages.isEmpty {
-                Self.writeResult(outFile: outFile, ok: false, message: "未找到 Antigravity 窗口页面", pages: nil)
-                return 1
-            }
-            let expr = try CdpHelper.buildInjectExpression(baseDir: baseDir, manifest: manifest)
-            var injectedTitles: [String] = []
-            for page in pages {
-                let session = try CdpSession.connect(wsUrl: page.webSocketDebuggerUrl, timeoutMs: 4000)
-                defer { session.close() }
-                _ = try session.evaluate(expr, awaitPromise: false)
-                injectedTitles.append(CdpHelper.shortTitle(page))
-            }
-            Self.writeResult(outFile: outFile, ok: true, message: "injected \(injectedTitles.count) page(s)", pages: injectedTitles)
-            return 0
-        } catch {
-            Self.writeResult(outFile: outFile, ok: false, message: error.localizedDescription, pages: nil)
-            return 1
         }
     }
 
     func runRemove(overridePort: Int?, outFile: String?) -> Int32 {
-        let manifest = try? PluginManifest.load(baseDir: baseDir)
-        stopRunningWatcherInDir()
-        var cleaned: [String] = []
-        if let port = CdpHelper.readPort(overridePort: overridePort),
-           let removeExpr = manifest?.removeExpression,
-           !removeExpr.isEmpty,
-           let pages = try? CdpHelper.listPages(port: port) {
-            for page in pages {
-                if let session = try? CdpSession.connect(wsUrl: page.webSocketDebuggerUrl, timeoutMs: 3000) {
-                    defer { session.close() }
-                    if (try? session.evaluate(removeExpr, awaitPromise: false)) != nil {
-                        cleaned.append(CdpHelper.shortTitle(page))
+        return autoreleasepool {
+            let manifest = try? PluginManifest.load(baseDir: baseDir)
+            stopRunningWatcherInDir()
+            var cleaned: [String] = []
+            if let port = CdpHelper.readPort(overridePort: overridePort),
+               let removeExpr = manifest?.removeExpression,
+               !removeExpr.isEmpty,
+               let pages = try? CdpHelper.listPages(port: port) {
+                for page in pages {
+                    autoreleasepool {
+                        if let session = try? CdpSession.connect(wsUrl: page.webSocketDebuggerUrl, timeoutMs: 3000) {
+                            defer { session.close() }
+                            if (try? session.evaluate(removeExpr, awaitPromise: false)) != nil {
+                                cleaned.append(CdpHelper.shortTitle(page))
+                            }
+                        }
                     }
                 }
             }
+            Self.writeResult(outFile: outFile, ok: true, message: "removed from \(cleaned.count) page(s)", pages: cleaned)
+            return 0
         }
-        Self.writeResult(outFile: outFile, ok: true, message: "removed from \(cleaned.count) page(s)", pages: cleaned)
-        return 0
     }
 
     private func stopRunningWatcherInDir() {
@@ -192,16 +205,23 @@ final class WatcherApp {
         }
 
         let selfPid = getpid()
-        try? String(selfPid).write(toFile: pidFile, atomically: true, encoding: .utf8)
-        try? "".write(toFile: logFile, atomically: false, encoding: .utf8)
-
-        var manifest: PluginManifest
-        var currentExpr: String
-        do {
-            manifest = try PluginManifest.load(baseDir: baseDir)
-            currentExpr = try CdpHelper.buildInjectExpression(baseDir: baseDir, manifest: manifest)
-        } catch {
-            log("[!] 初始化加载失败: \(error.localizedDescription)")
+        var manifest: PluginManifest!
+        var currentExpr: String!
+        var lastDirStamp: [String: String] = [:]
+        var initFailed = false
+        autoreleasepool {
+            try? String(selfPid).write(toFile: pidFile, atomically: true, encoding: .utf8)
+            try? "".write(toFile: logFile, atomically: false, encoding: .utf8)
+            do {
+                manifest = try PluginManifest.load(baseDir: baseDir)
+                currentExpr = try CdpHelper.buildInjectExpression(baseDir: baseDir, manifest: manifest)
+                lastDirStamp = computeDirStamp()
+            } catch {
+                log("[!] 初始化加载失败: \(error.localizedDescription)")
+                initFailed = true
+            }
+        }
+        if initFailed {
             releasePidFile(selfPid: selfPid)
             flock(lockFd, LOCK_UN)
             close(lockFd)
@@ -213,7 +233,6 @@ final class WatcherApp {
         let stateLock = NSLock()
         var attached: [String: AttachedEntry] = [:]
         var attaching: Set<String> = []
-        var lastDirStamp = computeDirStamp()
 
         let exitSem = DispatchSemaphore(value: 0)
         var shouldExit = false
@@ -236,7 +255,10 @@ final class WatcherApp {
 
         signal(SIGTERM, SIG_IGN)
         signal(SIGINT, SIG_IGN)
-        let sigQueue = DispatchQueue(label: "io.github.0dnancy.agy-claude-style.signals")
+        let sigQueue = DispatchQueue(
+            label: "io.github.0dnancy.agy-claude-style.signals",
+            autoreleaseFrequency: .workItem
+        )
         let termSource = DispatchSource.makeSignalSource(signal: SIGTERM, queue: sigQueue)
         termSource.setEventHandler(handler: requestExit)
         termSource.resume()
@@ -264,112 +286,123 @@ final class WatcherApp {
         }
 
         let attachPage: (CdpPageInfo) -> Void = { page in
-            stateLock.lock()
-            if attached[page.id] != nil || attaching.contains(page.id) {
-                stateLock.unlock()
-                return
-            }
-            attaching.insert(page.id)
-            stateLock.unlock()
-
-            var session: CdpSession?
-            do {
-                let s = try CdpSession.connect(wsUrl: page.webSocketDebuggerUrl, timeoutMs: 4000)
-                session = s
-                let title = CdpHelper.shortTitle(page)
-                let entry = AttachedEntry(session: s, scriptId: nil, title: title)
-
-                s.onClose = {
-                    stateLock.lock()
-                    let removed = attached.removeValue(forKey: page.id)
+            autoreleasepool {
+                stateLock.lock()
+                if attached[page.id] != nil || attaching.contains(page.id) {
                     stateLock.unlock()
-                    if let removed = removed {
-                        self.log("[-] 窗口已关闭: \(removed.title)")
-                    }
+                    return
                 }
+                attaching.insert(page.id)
+                stateLock.unlock()
 
-                _ = try s.send("Page.enable", params: nil, timeoutMs: 5000)
-                s.on("Runtime.bindingCalled") { params in
-                    guard let name = params["name"]?.stringValue,
-                          let payloadStr = params["payload"]?.stringValue else { return }
-                    stateLock.lock()
-                    let manifestSnap = manifest
-                    stateLock.unlock()
-                    guard name == manifestSnap.settingBinding else { return }
-                    if let kv = try? MiniJson.parseObject(payloadStr),
-                       let key = kv["key"]?.stringValue,
-                       let value = kv["value"] {
-                        if CdpHelper.updateConfigSetting(baseDir: self.baseDir, manifest: manifestSnap, key: key, value: value) {
-                            self.log("[⚙] 设置已保存: \(key) = \(MiniJson.stringify(value, pretty: false))")
+                var session: CdpSession?
+                do {
+                    let s = try CdpSession.connect(wsUrl: page.webSocketDebuggerUrl, timeoutMs: 4000)
+                    session = s
+                    let title = CdpHelper.shortTitle(page)
+                    let entry = AttachedEntry(session: s, scriptId: nil, title: title)
+
+                    s.onClose = { [weak self] in
+                        stateLock.lock()
+                        let removed = attached.removeValue(forKey: page.id)
+                        stateLock.unlock()
+                        if let removed = removed {
+                            removed.session.close()
+                            self?.log("[-] 窗口已关闭: \(removed.title)")
                         }
                     }
+
+                    _ = try s.send("Page.enable", params: nil, timeoutMs: 5000)
+                    s.on("Runtime.bindingCalled") { [weak self] params in
+                        autoreleasepool {
+                            guard let self = self,
+                                  let name = params["name"]?.stringValue,
+                                  let payloadStr = params["payload"]?.stringValue else { return }
+                            stateLock.lock()
+                            let manifestSnap = manifest!
+                            stateLock.unlock()
+                            guard name == manifestSnap.settingBinding else { return }
+                            if let kv = try? MiniJson.parseObject(payloadStr),
+                               let key = kv["key"]?.stringValue,
+                               let value = kv["value"] {
+                                if CdpHelper.updateConfigSetting(baseDir: self.baseDir, manifest: manifestSnap, key: key, value: value) {
+                                    self.log("[⚙] 设置已保存: \(key) = \(MiniJson.stringify(value, pretty: false))")
+                                }
+                            }
+                        }
+                    }
+
+                    _ = try s.send("Runtime.enable", params: nil, timeoutMs: 5000)
+                    stateLock.lock()
+                    let bindingName = manifest.settingBinding
+                    let exprSnap = currentExpr!
+                    stateLock.unlock()
+
+                    _ = try s.send("Runtime.addBinding", params: ["name": .string(bindingName)], timeoutMs: 5000)
+
+                    stateLock.lock()
+                    attached[page.id] = entry
+                    attaching.remove(page.id)
+                    stateLock.unlock()
+
+                    let evalVal = try applyToEntry(entry, exprSnap)
+                    let status = evalVal.objectValue?["status"]?.stringValue ?? "ok"
+                    self.log("[✓] 已注入 agy-claude-style: \(title) (\(status))")
+                } catch {
+                    stateLock.lock()
+                    attaching.remove(page.id)
+                    let removed = attached.removeValue(forKey: page.id)
+                    stateLock.unlock()
+                    removed?.session.close()
+                    session?.close()
+                    self.log("[!] 注入失败，稍后重试: \(CdpHelper.shortTitle(page)) — \(error.localizedDescription)")
                 }
-
-                _ = try s.send("Runtime.enable", params: nil, timeoutMs: 5000)
-                stateLock.lock()
-                let bindingName = manifest.settingBinding
-                let exprSnap = currentExpr
-                stateLock.unlock()
-
-                _ = try s.send("Runtime.addBinding", params: ["name": .string(bindingName)], timeoutMs: 5000)
-
-                stateLock.lock()
-                attached[page.id] = entry
-                attaching.remove(page.id)
-                stateLock.unlock()
-
-                let evalVal = try applyToEntry(entry, exprSnap)
-                let status = evalVal.objectValue?["status"]?.stringValue ?? "ok"
-                self.log("[✓] 已注入 agy-claude-style: \(title) (\(status))")
-            } catch {
-                stateLock.lock()
-                attaching.remove(page.id)
-                let removed = attached.removeValue(forKey: page.id)
-                stateLock.unlock()
-                removed?.session.close()
-                session?.close()
-                self.log("[!] 注入失败，稍后重试: \(CdpHelper.shortTitle(page)) — \(error.localizedDescription)")
             }
         }
 
-        let reloadQueue = DispatchQueue(label: "io.github.0dnancy.agy-claude-style.reload")
+        let reloadQueue = DispatchQueue(
+            label: "io.github.0dnancy.agy-claude-style.reload",
+            autoreleaseFrequency: .workItem
+        )
         var pendingReloadWork: DispatchWorkItem?
         var pendingChangedHint: String?
 
         let performReload: (String?) -> Void = { hintName in
-            pendingReloadWork?.cancel()
-            pendingReloadWork = nil
-            pendingChangedHint = nil
+            autoreleasepool {
+                pendingReloadWork?.cancel()
+                pendingReloadWork = nil
+                pendingChangedHint = nil
 
-            let currentStamp = self.computeDirStamp()
-            stateLock.lock()
-            let detectedChange = self.firstChangedFile(oldStamp: lastDirStamp, newStamp: currentStamp)
-            if detectedChange == nil {
-                stateLock.unlock()
-                return
-            }
-            lastDirStamp = currentStamp
-            stateLock.unlock()
-
-            let changedName = detectedChange ?? hintName ?? "config.json"
-            do {
-                let nextManifest = try PluginManifest.load(baseDir: self.baseDir)
-                let nextExpr = try CdpHelper.buildInjectExpression(baseDir: self.baseDir, manifest: nextManifest)
+                let currentStamp = self.computeDirStamp()
                 stateLock.lock()
-                manifest = nextManifest
-                currentExpr = nextExpr
-                let entries = Array(attached.values)
+                let detectedChange = self.firstChangedFile(oldStamp: lastDirStamp, newStamp: currentStamp)
+                if detectedChange == nil {
+                    stateLock.unlock()
+                    return
+                }
+                lastDirStamp = currentStamp
                 stateLock.unlock()
 
-                var n = 0
-                for entry in entries {
-                    if (try? applyToEntry(entry, nextExpr)) != nil {
-                        n += 1
+                let changedName = detectedChange ?? hintName ?? "config.json"
+                do {
+                    let nextManifest = try PluginManifest.load(baseDir: self.baseDir)
+                    let nextExpr = try CdpHelper.buildInjectExpression(baseDir: self.baseDir, manifest: nextManifest)
+                    stateLock.lock()
+                    manifest = nextManifest
+                    currentExpr = nextExpr
+                    let entries = Array(attached.values)
+                    stateLock.unlock()
+
+                    var n = 0
+                    for entry in entries {
+                        if (try? applyToEntry(entry, nextExpr)) != nil {
+                            n += 1
+                        }
                     }
+                    self.log("[↻] \(changedName) 已变更，已热更新 \(n) 个窗口")
+                } catch {
+                    self.log("[!] 读取文件失败: \(error.localizedDescription)")
                 }
-                self.log("[↻] \(changedName) 已变更，已热更新 \(n) 个窗口")
-            } catch {
-                self.log("[!] 读取文件失败: \(error.localizedDescription)")
             }
         }
 
@@ -392,12 +425,14 @@ final class WatcherApp {
         if dirFd >= 0 {
             let src = DispatchSource.makeFileSystemObjectSource(fileDescriptor: dirFd, eventMask: [.write, .rename, .extend, .delete], queue: reloadQueue)
             src.setEventHandler {
-                let currentStamp = self.computeDirStamp()
-                stateLock.lock()
-                let changed = self.firstChangedFile(oldStamp: lastDirStamp, newStamp: currentStamp)
-                stateLock.unlock()
-                if let changed = changed {
-                    scheduleReload(changed)
+                autoreleasepool {
+                    let currentStamp = self.computeDirStamp()
+                    stateLock.lock()
+                    let changed = self.firstChangedFile(oldStamp: lastDirStamp, newStamp: currentStamp)
+                    stateLock.unlock()
+                    if let changed = changed {
+                        scheduleReload(changed)
+                    }
                 }
             }
             src.setCancelHandler {
@@ -409,39 +444,43 @@ final class WatcherApp {
 
         var lastPort: Int?
         while !isExiting() {
-            // Poll fallback for in-place edits that don't fire directory vnode write events
-            reloadQueue.sync {
-                performReload(nil)
-            }
-
-            if let port = CdpHelper.readPort(overridePort: overridePort),
-               let pages = try? CdpHelper.listPages(port: port) {
-                if lastPort != port {
-                    stateLock.lock()
-                    let oldEntries = Array(attached.values)
-                    attached.removeAll()
-                    stateLock.unlock()
-                    for oldEntry in oldEntries {
-                        oldEntry.session.close()
-                    }
-                    log("[+] 连接到调试端口 \(port)")
-                    lastPort = port
+            autoreleasepool {
+                // Poll fallback for in-place edits that don't fire directory vnode write events
+                reloadQueue.sync {
+                    performReload(nil)
                 }
 
-                let group = DispatchGroup()
-                for page in pages {
-                    stateLock.lock()
-                    let needsAttach = (attached[page.id] == nil && !attaching.contains(page.id))
-                    stateLock.unlock()
-                    if needsAttach {
-                        group.enter()
-                        DispatchQueue.global(qos: .utility).async {
-                            attachPage(page)
-                            group.leave()
+                if let port = CdpHelper.readPort(overridePort: overridePort),
+                   let pages = try? CdpHelper.listPages(port: port) {
+                    if lastPort != port {
+                        stateLock.lock()
+                        let oldEntries = Array(attached.values)
+                        attached.removeAll()
+                        stateLock.unlock()
+                        for oldEntry in oldEntries {
+                            oldEntry.session.close()
+                        }
+                        log("[+] 连接到调试端口 \(port)")
+                        lastPort = port
+                    }
+
+                    let group = DispatchGroup()
+                    for page in pages {
+                        stateLock.lock()
+                        let needsAttach = (attached[page.id] == nil && !attaching.contains(page.id))
+                        stateLock.unlock()
+                        if needsAttach {
+                            group.enter()
+                            DispatchQueue.global(qos: .utility).async {
+                                autoreleasepool {
+                                    attachPage(page)
+                                    group.leave()
+                                }
+                            }
                         }
                     }
+                    _ = group.wait(timeout: .now() + .seconds(10))
                 }
-                _ = group.wait(timeout: .now() + .seconds(10))
             }
 
             _ = exitSem.wait(timeout: .now() + .seconds(2))
@@ -467,40 +506,42 @@ final class WatcherApp {
 }
 
 func runWatcherMain() -> Int32 {
-    var mode = "watch"
-    var customDir: String?
-    var overridePort: Int?
-    var outFile: String?
+    return autoreleasepool {
+        var mode = "watch"
+        var customDir: String?
+        var overridePort: Int?
+        var outFile: String?
 
-    let args = CommandLine.arguments
-    var i = 1
-    while i < args.count {
-        let a = args[i]
-        if a == "--watch" { mode = "watch" }
-        else if a == "--once" { mode = "once" }
-        else if a == "--remove" { mode = "remove" }
-        else if a == "--dir" && i + 1 < args.count { i += 1; customDir = args[i] }
-        else if a == "--cdp-port" && i + 1 < args.count {
+        let args = CommandLine.arguments
+        var i = 1
+        while i < args.count {
+            let a = args[i]
+            if a == "--watch" { mode = "watch" }
+            else if a == "--once" { mode = "once" }
+            else if a == "--remove" { mode = "remove" }
+            else if a == "--dir" && i + 1 < args.count { i += 1; customDir = args[i] }
+            else if a == "--cdp-port" && i + 1 < args.count {
+                i += 1
+                if let p = Int(args[i]), p > 0 { overridePort = p }
+            }
+            else if a == "--out" && i + 1 < args.count { i += 1; outFile = args[i] }
             i += 1
-            if let p = Int(args[i]), p > 0 { overridePort = p }
         }
-        else if a == "--out" && i + 1 < args.count { i += 1; outFile = args[i] }
-        i += 1
-    }
 
-    let rawBase = (customDir?.isEmpty == false)
-        ? customDir!
-        : ((args[0] as NSString).deletingLastPathComponent)
-    let baseDir = URL(fileURLWithPath: rawBase.isEmpty ? "." : rawBase).standardizedFileURL.path
-    let app = WatcherApp(baseDir: baseDir, isWatch: mode == "watch")
+        let rawBase = (customDir?.isEmpty == false)
+            ? customDir!
+            : ((args[0] as NSString).deletingLastPathComponent)
+        let baseDir = URL(fileURLWithPath: rawBase.isEmpty ? "." : rawBase).standardizedFileURL.path
+        let app = WatcherApp(baseDir: baseDir, isWatch: mode == "watch")
 
-    if mode == "once" {
-        return app.runOnce(overridePort: overridePort, outFile: outFile)
+        if mode == "once" {
+            return app.runOnce(overridePort: overridePort, outFile: outFile)
+        }
+        if mode == "remove" {
+            return app.runRemove(overridePort: overridePort, outFile: outFile)
+        }
+        return app.runWatch(overridePort: overridePort)
     }
-    if mode == "remove" {
-        return app.runRemove(overridePort: overridePort, outFile: outFile)
-    }
-    return app.runWatch(overridePort: overridePort)
 }
 
 exit(runWatcherMain())

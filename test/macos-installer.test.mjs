@@ -40,6 +40,7 @@ function runBin(binPath, args, timeoutMs = 20000) {
 function createMockCdpServer() {
   const receivedCalls = [];
   const sockets = new Set();
+  let jsonListHits = 0;
   let claudeStyleMounted = false;
   let lastInjectedExpr = null;
   let lastRemovedExpr = null;
@@ -101,6 +102,7 @@ function createMockCdpServer() {
 
   const server = http.createServer((req, res) => {
     if (req.url === '/json/list') {
+      jsonListHits += 1;
       const addr = server.address();
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(
@@ -220,6 +222,14 @@ function createMockCdpServer() {
     getCalls() {
       return receivedCalls;
     },
+    getJsonListHits() {
+      return jsonListHits;
+    },
+    dropActiveSockets() {
+      for (const s of sockets) s.destroy();
+      sockets.clear();
+      claudeStyleMounted = false;
+    },
     getLastInjectedExpr() {
       return lastInjectedExpr;
     },
@@ -302,6 +312,19 @@ test(
         assert.ok(archs.includes('arm64'), `${path.basename(bin)} includes arm64`);
         assert.ok(archs.includes('x86_64'), `${path.basename(bin)} includes x86_64`);
       }
+
+      // Guard against autoreleasepool / DispatchQueue autorelease regressions in watcher daemon
+      const watcherSymbols = execFileSync('nm', ['-u', watcherBundleBin], { encoding: 'utf8' });
+      assert.ok(watcherSymbols.includes('objc_autoreleasePoolPush'), 'watcher drains autorelease pools');
+      assert.ok(watcherSymbols.includes('objc_autoreleasePoolPop'), 'watcher pops autorelease pools');
+      assert.ok(
+        watcherSymbols.includes('AutoreleaseFrequencyO8workItem'),
+        'watcher dispatch queues use .workItem autorelease frequency'
+      );
+      assert.ok(
+        !watcherSymbols.includes('AutoreleaseFrequencyO7inherit'),
+        'watcher dispatch queues do not leave .inherit autorelease frequency'
+      );
 
       execFileSync('codesign', ['--verify', '--deep', '--strict', appPath], { stdio: 'inherit' });
 
@@ -403,6 +426,36 @@ test(
         const newer = mockCdp.getCalls().slice(beforeCallCount);
         return newer.some((c) => c.method === 'Page.removeScriptToEvaluateOnNewDocument') ? true : null;
       });
+
+      // 3b. Verify remote WebSocket disconnect cleanup, re-attach, and bounded Mach ports across polls
+      const watcherPid = parseInt(fs.readFileSync(path.join(installDir, '.watch.pid'), 'utf8'), 10);
+      assert.ok(watcherPid > 0, 'watcher PID is valid');
+      const readMachPorts = (pid) => {
+        const out = execFileSync('top', ['-pid', String(pid), '-l', '1', '-stats', 'pid,ports'], {
+          encoding: 'utf8',
+        });
+        const lines = out.trim().split(/\r?\n/);
+        const last = lines[lines.length - 1].trim().split(/\s+/);
+        return parseInt(last[1], 10);
+      };
+      const portsBefore = readMachPorts(watcherPid);
+
+      const callsBeforeDrop = mockCdp.getCalls().length;
+      mockCdp.dropActiveSockets();
+      await waitFor(() => {
+        const newer = mockCdp.getCalls().slice(callsBeforeDrop);
+        return newer.some((c) => c.method === 'Page.addScriptToEvaluateOnNewDocument') ? true : null;
+      }, 8000);
+
+      const hitsStart = mockCdp.getJsonListHits();
+      await waitFor(() => (mockCdp.getJsonListHits() >= hitsStart + 2 ? true : null), 8000);
+      const portsAfter = readMachPorts(watcherPid);
+      if (Number.isFinite(portsBefore) && Number.isFinite(portsAfter)) {
+        assert.ok(
+          portsAfter <= portsBefore + 10,
+          `Mach ports should remain bounded across polls and reconnects (before=${portsBefore}, after=${portsAfter})`
+        );
+      }
 
       // 4. Test re-install / upgrade preserves existing user config.json
       await runBin(

@@ -74,10 +74,13 @@ final class PluginManifest {
 }
 
 final class CdpSession: NSObject, URLSessionWebSocketDelegate {
-    private var urlSession: URLSession!
-    private var wsTask: URLSessionWebSocketTask!
+    private var urlSession: URLSession?
+    private var wsTask: URLSessionWebSocketTask?
     private let lock = NSLock()
-    private let sendQueue = DispatchQueue(label: "io.github.0dnancy.agy-claude-style.cdp.send")
+    private let sendQueue = DispatchQueue(
+        label: "io.github.0dnancy.agy-claude-style.cdp.send",
+        autoreleaseFrequency: .workItem
+    )
     private var nextId: Int = 0
     private var pending: [Int: (Result<[String: JsonValue], Error>) -> Void] = [:]
     private var listeners: [String: [([String: JsonValue]) -> Void]] = [:]
@@ -98,6 +101,10 @@ final class CdpSession: NSObject, URLSessionWebSocketDelegate {
         let session = CdpSession()
         let cfg = URLSessionConfiguration.ephemeral
         cfg.connectionProxyDictionary = [:]
+        cfg.urlCache = nil
+        cfg.requestCachePolicy = .reloadIgnoringLocalCacheData
+        cfg.httpCookieAcceptPolicy = .never
+        cfg.httpShouldSetCookies = false
         cfg.timeoutIntervalForRequest = max(1.0, Double(timeoutMs) / 1000.0)
         let delegateQueue = OperationQueue()
         delegateQueue.maxConcurrentOperationCount = 1
@@ -172,8 +179,8 @@ final class CdpSession: NSObject, URLSessionWebSocketDelegate {
             let isClosed = self.closed
             let task = self.wsTask
             self.lock.unlock()
-            if isClosed || task == nil { return }
-            task!.send(.string(json)) { [weak self] err in
+            guard !isClosed, let task = task else { return }
+            task.send(.string(json)) { [weak self] err in
                 if let err = err {
                     self?.failPending(id: id, error: err)
                 }
@@ -224,13 +231,7 @@ final class CdpSession: NSObject, URLSessionWebSocketDelegate {
     }
 
     func close() {
-        markClosed()
-        lock.lock()
-        let task = wsTask
-        let session = urlSession
-        lock.unlock()
-        task?.cancel(with: .normalClosure, reason: nil)
-        session?.invalidateAndCancel()
+        markClosed(sendCloseFrame: true)
     }
 
     private func failPending(id: Int, error: Error) {
@@ -245,25 +246,27 @@ final class CdpSession: NSObject, URLSessionWebSocketDelegate {
         let isClosed = closed
         let task = wsTask
         lock.unlock()
-        if isClosed || task == nil { return }
+        guard !isClosed, let task = task else { return }
 
-        task!.receive { [weak self] result in
-            guard let self = self else { return }
-            switch result {
-            case .success(let message):
-                switch message {
-                case .string(let text):
-                    self.handleMessage(text)
-                case .data(let data):
-                    if let text = String(data: data, encoding: .utf8) {
+        task.receive { [weak self] result in
+            autoreleasepool {
+                guard let self = self else { return }
+                switch result {
+                case .success(let message):
+                    switch message {
+                    case .string(let text):
                         self.handleMessage(text)
+                    case .data(let data):
+                        if let text = String(data: data, encoding: .utf8) {
+                            self.handleMessage(text)
+                        }
+                    @unknown default:
+                        break
                     }
-                @unknown default:
-                    break
+                    self.startReceiveLoop()
+                case .failure:
+                    self.markClosed()
                 }
-                self.startReceiveLoop()
-            case .failure:
-                self.markClosed()
             }
         }
     }
@@ -299,19 +302,30 @@ final class CdpSession: NSObject, URLSessionWebSocketDelegate {
         }
     }
 
-    private func markClosed() {
+    private func markClosed(sendCloseFrame: Bool = false) {
         lock.lock()
         if closed {
             lock.unlock()
             return
         }
         closed = true
+        let task = wsTask
+        let session = urlSession
+        wsTask = nil
+        urlSession = nil
         let pendingCallbacks = pending
         pending.removeAll()
+        listeners.removeAll()
         let closeHandler = onClose
+        onClose = nil
         let openCb = openCallback
         openCallback = nil
         lock.unlock()
+
+        if sendCloseFrame {
+            task?.cancel(with: .normalClosure, reason: nil)
+        }
+        session?.invalidateAndCancel()
 
         openCb?(CdpError("CDP connection closed"))
         for (_, cb) in pendingCallbacks {
@@ -350,6 +364,19 @@ final class CdpSession: NSObject, URLSessionWebSocketDelegate {
 }
 
 enum CdpHelper {
+    private static let pollSession: URLSession = {
+        let cfg = URLSessionConfiguration.ephemeral
+        cfg.connectionProxyDictionary = [:]
+        cfg.urlCache = nil
+        cfg.requestCachePolicy = .reloadIgnoringLocalCacheData
+        cfg.httpCookieAcceptPolicy = .never
+        cfg.httpShouldSetCookies = false
+        cfg.timeoutIntervalForRequest = 2.0
+        cfg.timeoutIntervalForResource = 2.0
+        cfg.httpMaximumConnectionsPerHost = 2
+        return URLSession(configuration: cfg)
+    }()
+
     static func getPortFilePath() -> String {
         let home = FileManager.default.homeDirectoryForCurrentUser.path
         return ((home as NSString)
@@ -376,18 +403,14 @@ enum CdpHelper {
         guard let url = URL(string: "http://127.0.0.1:\(port)/json/list") else {
             throw CdpError("Invalid CDP HTTP URL")
         }
-        let cfg = URLSessionConfiguration.ephemeral
-        cfg.connectionProxyDictionary = [:]
-        cfg.timeoutIntervalForRequest = 2.0
-        cfg.timeoutIntervalForResource = 2.0
-        let session = URLSession(configuration: cfg)
-        defer { session.finishTasksAndInvalidate() }
+        var req = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 2.0)
+        req.setValue("close", forHTTPHeaderField: "Connection")
 
         let sem = DispatchSemaphore(value: 0)
         var fetchedData: Data?
         var fetchedError: Error?
 
-        let task = session.dataTask(with: url) { data, _, err in
+        let task = pollSession.dataTask(with: req) { data, _, err in
             fetchedData = data
             fetchedError = err
             sem.signal()
@@ -404,6 +427,7 @@ enum CdpHelper {
         guard let data = fetchedData, let jsonText = String(data: data, encoding: .utf8) else {
             throw CdpError("Empty response from /json/list")
         }
+        fetchedData = nil
 
         let targets = try MiniJson.parseArray(jsonText)
         var pages: [CdpPageInfo] = []
