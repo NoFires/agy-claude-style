@@ -20,5 +20,7 @@
   "smoothCaret": true,
   "sidebarRestyle": true,
   "sidebarCompact": false,
-  "placeholderStyle": "studio"
+  "placeholderStyle": "studio",
+  "rewindPanel": true,
+  "undoConfirmMode": "picker"
 }

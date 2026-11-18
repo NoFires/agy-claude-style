@@ -445,7 +445,7 @@ test('inject expression mounts and REMOVE_EXPRESSION cleanly tears down on simul
     const settingKeys = new Set(
       appearancePanel.querySelectorAll('#ag-cs-settings-sec button').map((b) => b.getAttribute('data-ag-cs-key'))
     );
-    assert.equal(settingKeys.size, 20);
+    assert.equal(settingKeys.size, 22);
     for (const expectedKey of [
       'language',
       'homeLayout',
@@ -459,6 +459,8 @@ test('inject expression mounts and REMOVE_EXPRESSION cleanly tears down on simul
       'smoothCaret',
       'mascot',
       'homeRipple',
+      'rewindPanel',
+      'undoConfirmMode',
       'inlineStats',
       'ringMode',
       'turnBadges',

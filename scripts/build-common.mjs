@@ -35,6 +35,8 @@ const VALIDATORS = {
   sidebarRestyle: 'boolean',
   sidebarCompact: 'boolean',
   placeholderStyle: ['studio', 'host'],
+  rewindPanel: 'boolean',
+  undoConfirmMode: ['picker', 'prompt', 'auto_both', 'auto_chat'],
 };
 
 function createManifest() {

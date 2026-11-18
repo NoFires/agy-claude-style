@@ -17,9 +17,11 @@
   "performanceBackdrop": "card",
   "placeholderStyle": "studio",
   "pollIntervalMs": 2500,
+  "rewindPanel": true,
   "ringMode": "context",
   "sidebarCompact": false,
   "sidebarRestyle": true,
   "smoothCaret": true,
-  "turnBadges": true
+  "turnBadges": true,
+  "undoConfirmMode": "picker"
 }
