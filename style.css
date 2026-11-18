@@ -1310,9 +1310,10 @@ html[data-ag-cs-style] [data-ag-cs-effort="xhigh"],
 html[data-ag-cs-style] [data-ag-cs-effort="max"],
 html[data-ag-cs-style] [data-ag-cs-effort="extra"] { color: var(--ag-cs-effort-xhigh) !important; }
 
-/* Context meter mini ring on far right (conversation mode) */
+/* Context / quota meter mini rings on far right (conversation mode) */
+.ag-cs-quota-ring,
 .ag-cs-context-ring {
-  order: 7;
+  order: 8;
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -1330,10 +1331,15 @@ html[data-ag-cs-style] [data-ag-cs-effort="extra"] { color: var(--ag-cs-effort-x
   flex-shrink: 0;
   transition: background-color 120ms ease, color 120ms ease;
 }
+.ag-cs-quota-ring {
+  order: 7;
+}
+.ag-cs-quota-ring:hover,
 .ag-cs-context-ring:hover {
   background: var(--ag-cs-hover-wash);
   color: var(--foreground);
 }
+.ag-cs-quota-ring svg,
 .ag-cs-context-ring svg {
   width: 14px;
   height: 14px;
@@ -1354,6 +1360,7 @@ html[data-ag-cs-style] [data-ag-cs-effort="extra"] { color: var(--ag-cs-effort-x
   .ag-cs-inline-stats { display: none; }
 }
 @container input-footer (max-width: 340px) {
+  .ag-cs-quota-ring > span,
   .ag-cs-context-ring > span { display: none; }
 }
 
@@ -2540,6 +2547,7 @@ html[data-ag-cs-hud-compact="on"] .ag-cs-hud-footer-chip {
   padding: 0 6px;
   font-size: 10px;
 }
+html[data-ag-cs-hud-compact="on"] .ag-cs-quota-ring,
 html[data-ag-cs-hud-compact="on"] .ag-cs-context-ring {
   height: 22px;
   padding: 0 5px;

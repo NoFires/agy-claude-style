@@ -54,7 +54,7 @@ function updateConfigSetting(key, value) {
     mascot: (v) => v === 'crab' || v === 'off',
     logoInk: (v) => v === 'accent' || v === 'foreground',
     inlineStats: (v) => typeof v === 'boolean',
-    ringMode: (v) => v === 'context' || v === 'quota',
+    ringMode: (v) => v === 'context' || v === 'quota' || v === 'both',
     turnBadges: (v) => typeof v === 'boolean',
     hudTopBar: (v) => typeof v === 'boolean',
     hudBottomBar: (v) => typeof v === 'boolean',

@@ -21,7 +21,7 @@ const VALIDATORS = {
   mascot: ['crab', 'off'],
   logoInk: ['accent', 'foreground'],
   inlineStats: 'boolean',
-  ringMode: ['context', 'quota'],
+  ringMode: ['context', 'quota', 'both'],
   turnBadges: 'boolean',
   hudTopBar: 'boolean',
   hudBottomBar: 'boolean',

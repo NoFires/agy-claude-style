@@ -240,6 +240,7 @@
     ],
     optRingContext: ['上下文剩余 %', '上下文剩餘 %', '上下文剩餘 %', 'Context Rem %', 'コンテキスト残量 %'],
     optRingQuota: ['配额剩余 %', '配額剩餘 %', '配額剩餘 %', 'Quota Rem %', 'クォータ残量 %'],
+    optRingBoth: ['双圆环 (配额+占用)', '雙圓環 (配額+佔用)', '雙圓環 (配額+佔用)', 'Dual Rings', 'デュアルリング'],
     setTurnBadgesTitle: ['对话轮次 Token 徽章', '對話輪次 Token 徽章', '對話輪次 Token 徽章', 'Per-Turn Token Badges', 'ターン毎 Token バッジ'],
     setTurnBadgesDesc: [
       '在每轮 AI 回复底部渲染上下文增量、输出与速率徽章。',

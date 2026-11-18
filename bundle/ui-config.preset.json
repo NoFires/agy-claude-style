@@ -18,7 +18,7 @@
   "placeholderStyle": "studio",
   "pollIntervalMs": 2500,
   "rewindPanel": true,
-  "ringMode": "context",
+  "ringMode": "both",
   "sidebarCompact": false,
   "sidebarRestyle": true,
   "smoothCaret": true,
